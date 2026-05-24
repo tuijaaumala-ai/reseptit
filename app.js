@@ -468,15 +468,31 @@ function renderShoppingList() {
         
         const isFav = favorites.some(fav => fav.name.toLowerCase() === item.name.toLowerCase());
         const quantity = item.quantity || 1;
-        
-        li.innerHTML = `
-            <div class="shopping-item-left">
+        const isShoppingMode = shoppingModeCheckbox && shoppingModeCheckbox.checked;
+
+        let leftHTML = '';
+        if (isShoppingMode) {
+            leftHTML = `
                 <input type="checkbox" id="shop-item-${item.id}" ${item.bought ? 'checked' : ''}>
                 <label for="shop-item-${item.id}">
                     <span class="name">${escapeHTML(item.name)}</span>
                 </label>
-            </div>
-            <div class="shopping-item-actions">
+            `;
+        } else {
+            leftHTML = `
+                <span class="name">${escapeHTML(item.name)}</span>
+            `;
+        }
+
+        let actionsHTML = '';
+        if (isShoppingMode) {
+            actionsHTML = `
+                <div class="stepper static-stepper" style="border: none; background: none; padding: 0; margin-right: 0.5rem;">
+                    <span class="stepper-val" style="background: var(--border-color); padding: 0.35rem 0.65rem; border-radius: 6px; min-width: 2.2rem; text-align: center;">${quantity}</span>
+                </div>
+            `;
+        } else {
+            actionsHTML = `
                 <div class="stepper">
                     <button class="stepper-btn dec-btn" title="Vähennä">-</button>
                     <span class="stepper-val">${quantity}</span>
@@ -486,6 +502,15 @@ function renderShoppingList() {
                     ${isFav ? '❤️' : '🤍'}
                 </button>
                 <button class="delete-item-btn" title="Poista tuote">🗑️</button>
+            `;
+        }
+
+        li.innerHTML = `
+            <div class="shopping-item-left">
+                ${leftHTML}
+            </div>
+            <div class="shopping-item-actions">
+                ${actionsHTML}
             </div>
         `;
 
