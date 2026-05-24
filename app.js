@@ -106,7 +106,6 @@ try {
 // ==========================================
 // Item History (for autocomplete suggestions)
 // ==========================================
-const MAX_HISTORY_SIZE = 200;
 let itemHistory = [];
 try {
     const storedHistory = storage.getItem('shopping_item_history');
@@ -124,11 +123,10 @@ try {
 function addToHistory(name) {
     const normalized = name.trim();
     if (!normalized) return;
-    // Move to top if already exists
+    // Move to top if already exists (most recent first)
     const idx = itemHistory.findIndex(h => h.toLowerCase() === normalized.toLowerCase());
     if (idx > -1) itemHistory.splice(idx, 1);
     itemHistory.unshift(normalized);
-    if (itemHistory.length > MAX_HISTORY_SIZE) itemHistory = itemHistory.slice(0, MAX_HISTORY_SIZE);
     storage.setItem('shopping_item_history', JSON.stringify(itemHistory));
 }
 
