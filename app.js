@@ -648,8 +648,8 @@ async function initSync() {
     if (!syncId) {
         updateSyncStatus('syncing', 'Luodaan pilvilistaa...');
         try {
-            // Get a free keyvalue.immanuel.co App Key (zero configuration, high speed, and CORS enabled)
-            const response = await fetch('https://keyvalue.immanuel.co/api/KeyVal/GetAppKey');
+            // Get a free keyvalue.immanuel.co App Key via CORS proxy
+            const response = await fetch('https://corsproxy.io/?url=' + encodeURIComponent('https://keyvalue.immanuel.co/api/KeyVal/GetAppKey'));
             if (!response.ok) throw new Error('Failed to get app key');
             const appKey = await response.json(); // returns the 8-digit app key string
             if (appKey) {
@@ -676,7 +676,7 @@ async function initSync() {
 async function loadFromCloud() {
     if (!syncId || isSyncing) return;
     try {
-        const response = await fetch(`https://keyvalue.immanuel.co/api/KeyVal/GetValue/${syncId}/shopping_list`);
+        const response = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(`https://keyvalue.immanuel.co/api/KeyVal/GetValue/${syncId}/shopping_list`));
         if (!response.ok) throw new Error("Sync load failed");
         
         const dataStr = await response.json(); // Returns the string value
@@ -703,7 +703,7 @@ async function saveToCloud() {
     try {
         const serialized = serializeList(shoppingList);
         // We must encode the value because it is part of the URL path on keyvalue.immanuel.co
-        const response = await fetch(`https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${syncId}/shopping_list/${encodeURIComponent(serialized)}`, {
+        const response = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(`https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${syncId}/shopping_list/${encodeURIComponent(serialized)}`), {
             method: 'POST'
         });
         if (!response.ok) throw new Error("Sync save failed");
