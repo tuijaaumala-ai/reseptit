@@ -27,6 +27,7 @@ const recipeInstructionsEl = document.getElementById('recipe-instructions');
 // ==========================================
 const syncIndicator = document.getElementById('sync-indicator');
 const syncStatusText = document.getElementById('sync-status-text');
+const forceRefreshBtn = document.getElementById('force-refresh-btn');
 const showSyncCodeBtn = document.getElementById('show-sync-code-btn');
 const joinSyncBtn = document.getElementById('join-sync-btn');
 const syncModalOverlay = document.getElementById('sync-modal-overlay');
@@ -570,11 +571,15 @@ function saveAndSync() {
     // Mark as having unsaved changes (blocks poll from overwriting pending items)
     hasPendingChanges = true;
     
+    // Safety: always reset hasPendingChanges after max 10s, even if save hangs
+    const safetyReset = setTimeout(() => { hasPendingChanges = false; }, 10000);
+    
     // Debounced cloud save (500ms)
     if (syncTimeout) clearTimeout(syncTimeout);
     syncTimeout = setTimeout(async () => {
         await saveToCloud();
         hasPendingChanges = false;
+        clearTimeout(safetyReset);
     }, 500);
 }
 
@@ -604,6 +609,22 @@ function setupShoppingEventListeners() {
     if (shoppingModeCheckbox) {
         shoppingModeCheckbox.addEventListener('change', () => {
             renderShoppingList();
+        });
+    }
+
+    // Force refresh button
+    if (forceRefreshBtn) {
+        forceRefreshBtn.addEventListener('click', async () => {
+            // Clear pending state and force immediate poll
+            hasPendingChanges = false;
+            forceRefreshBtn.style.opacity = '0.4';
+            forceRefreshBtn.style.transform = 'rotate(180deg)';
+            forceRefreshBtn.style.transition = 'transform 0.5s';
+            await loadFromCloud();
+            setTimeout(() => {
+                forceRefreshBtn.style.opacity = '';
+                forceRefreshBtn.style.transform = '';
+            }, 600);
         });
     }
 
@@ -913,11 +934,11 @@ function updateSyncStatus(status, text) {
         syncIndicator.classList.add(status);
     }
     if (syncStatusText) {
-        if (status === 'active' && syncId) {
-            syncStatusText.innerHTML = `${text} <span class="sync-code-badge" style="font-size: 0.8rem; background: var(--bg-hover); color: var(--text-color); border: 1px solid var(--border-color); padding: 1px 6px; border-radius: 4px; font-family: monospace; font-weight: 600; margin-left: 6px; letter-spacing: 0.5px;">#${syncId}</span>`;
-        } else {
-            syncStatusText.textContent = text;
-        }
+        // Always append the sync code as a small badge for easy verification
+        const codeHtml = syncId
+            ? ` <span style="font-size: 0.75rem; background: var(--bg-hover); color: var(--text-muted); border: 1px solid var(--border-color); padding: 1px 5px; border-radius: 4px; font-family: monospace; font-weight: 700; letter-spacing: 0.05em; cursor:pointer;" title="Oma sync-koodi" onclick="showSyncCodeModal()">#${syncId.substring(0,6).toUpperCase()}</span>`
+            : '';
+        syncStatusText.innerHTML = `${text}${codeHtml}`;
     }
 }
 
