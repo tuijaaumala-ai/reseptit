@@ -45,10 +45,31 @@ const shoppingEmptyEl = document.getElementById('shopping-empty');
 let recipes = window.RECIPES || [];
 let activeRecipeId = null;
 
+// Safe localStorage helper to prevent crashes in private mode or strict browsers
+const storage = {
+    getItem(key) {
+        try {
+            return localStorage.getItem(key);
+        } catch (e) {
+            console.warn("Storage getItem failed:", e);
+            return null;
+        }
+    },
+    setItem(key, value) {
+        try {
+            localStorage.setItem(key, value);
+            return true;
+        } catch (e) {
+            console.warn("Storage setItem failed:", e);
+            return false;
+        }
+    }
+};
+
 // Shopping List & Favorites State
 let shoppingList = [];
 try {
-    shoppingList = JSON.parse(localStorage.getItem('shopping_list_items')) || [];
+    shoppingList = JSON.parse(storage.getItem('shopping_list_items')) || [];
     if (!Array.isArray(shoppingList)) shoppingList = [];
 } catch (e) {
     console.error("Failed to parse shopping list items:", e);
@@ -68,7 +89,7 @@ const DEFAULT_FAVORITES = [
 
 let favorites = DEFAULT_FAVORITES;
 try {
-    const storedFavs = localStorage.getItem('shopping_list_favorites');
+    const storedFavs = storage.getItem('shopping_list_favorites');
     if (storedFavs) {
         favorites = JSON.parse(storedFavs) || DEFAULT_FAVORITES;
     }
@@ -78,7 +99,12 @@ try {
 }
 
 // Cloud Sync State
-let syncId = localStorage.getItem('shopping_list_id') || '';
+let syncId = '';
+try {
+    syncId = storage.getItem('shopping_list_id') || '';
+} catch (e) {
+    console.error("Failed to read syncId:", e);
+}
 let isSyncing = false;
 let syncTimeout = null;
 
@@ -476,7 +502,7 @@ function toggleFavorite(name) {
         favorites.push({ name: name, favorite: true });
     }
     
-    localStorage.setItem('shopping_list_favorites', JSON.stringify(favorites));
+    storage.setItem('shopping_list_favorites', JSON.stringify(favorites));
     renderFavorites();
     renderShoppingList(); // updates heart icons in list
 }
@@ -503,32 +529,39 @@ function saveAndSync() {
 }
 
 function saveLocallyOnly() {
-    localStorage.setItem('shopping_list_items', JSON.stringify(shoppingList));
+    storage.setItem('shopping_list_items', JSON.stringify(shoppingList));
 }
 
 function setupShoppingEventListeners() {
     // Add Item Form
-    addItemForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const name = newItemNameInput.value;
-        const amount = newItemAmountInput.value;
-        addShoppingItem(name, amount);
-        
-        newItemNameInput.value = '';
-        newItemAmountInput.value = '';
-        newItemNameInput.focus();
-    });
+    if (addItemForm) {
+        addItemForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = newItemNameInput.value;
+            const amount = newItemAmountInput.value;
+            addShoppingItem(name, amount);
+            
+            newItemNameInput.value = '';
+            newItemAmountInput.value = '';
+            newItemNameInput.focus();
+        });
+    }
 
     // Clear list button
-    clearListBtn.addEventListener('click', clearList);
+    if (clearListBtn) {
+        clearListBtn.addEventListener('click', clearList);
+    }
 
     // Shopping Mode checkbox toggling (resorts list on transition)
-    shoppingModeCheckbox.addEventListener('change', () => {
-        renderShoppingList();
-    });
+    if (shoppingModeCheckbox) {
+        shoppingModeCheckbox.addEventListener('change', () => {
+            renderShoppingList();
+        });
+    }
 
     // Share list button
-    shareListBtn.addEventListener('click', () => {
+    if (shareListBtn) {
+        shareListBtn.addEventListener('click', () => {
         if (!syncId) {
             alert("Pilvisynkronointi ei ole valmis vielä. Yritä hetken kuluttua uudelleen.");
             return;
@@ -569,7 +602,7 @@ async function initSync() {
     
     if (listParam) {
         syncId = listParam;
-        localStorage.setItem('shopping_list_id', syncId);
+        storage.setItem('shopping_list_id', syncId);
         // Silently clean URL
         window.history.replaceState(null, null, window.location.pathname + '?tab=shopping');
     }
@@ -586,7 +619,7 @@ async function initSync() {
             const data = await response.json();
             if (data && data.id) {
                 syncId = data.id;
-                localStorage.setItem('shopping_list_id', syncId);
+                storage.setItem('shopping_list_id', syncId);
                 updateSyncStatus('active', 'Yhdistetty pilveen');
             } else {
                 throw new Error('Sync creation failed');
