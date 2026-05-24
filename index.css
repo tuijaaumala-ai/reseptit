@@ -1131,3 +1131,110 @@ input:checked + .slider:before {
     min-width: 1rem;
     text-align: center;
 }
+
+/* ========================================= */
+/* 🔗 Sync Modal & Share Buttons             */
+/* ========================================= */
+.sync-btn-group {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.share-btn {
+    background: transparent;
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.45rem 0.9rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.share-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-light);
+}
+
+.join-btn {
+    border-color: rgba(16, 185, 129, 0.4);
+    color: #10b981;
+}
+
+.join-btn:hover {
+    border-color: #10b981;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+}
+
+/* Modal overlay */
+.sync-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    animation: fadeIn 0.2s ease;
+}
+
+.sync-modal {
+    position: relative;
+    background: var(--bg-sidebar);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 2rem 1.8rem 1.8rem;
+    max-width: 360px;
+    width: 100%;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+    animation: slideUp 0.25s ease;
+}
+
+.sync-modal-close {
+    position: absolute;
+    top: 0.8rem;
+    right: 0.9rem;
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.3rem 0.5rem;
+    border-radius: 6px;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.sync-modal-close:hover {
+    color: var(--text-main);
+}
+
+@keyframes slideUp {
+    from { transform: translateY(16px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* CSS variables aliases used in inline styles */
+:root {
+    --text-color: var(--text-main);
+    --bg-hover: rgba(255,255,255,0.05);
+    --primary-color: var(--primary);
+}
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg-hover: rgba(0,0,0,0.04);
+    }
+}

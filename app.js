@@ -27,7 +27,11 @@ const recipeInstructionsEl = document.getElementById('recipe-instructions');
 // ==========================================
 const syncIndicator = document.getElementById('sync-indicator');
 const syncStatusText = document.getElementById('sync-status-text');
-const shareListBtn = document.getElementById('share-list-btn');
+const showSyncCodeBtn = document.getElementById('show-sync-code-btn');
+const joinSyncBtn = document.getElementById('join-sync-btn');
+const syncModalOverlay = document.getElementById('sync-modal-overlay');
+const syncModalContent = document.getElementById('sync-modal-content');
+const syncModalClose = document.getElementById('sync-modal-close');
 
 const favoritesGrid = document.getElementById('favorites-grid');
 const addItemForm = document.getElementById('add-item-form');
@@ -101,11 +105,26 @@ try {
 // Cloud Sync State
 const bucketId = 'PUqaJ6qUo9yJGpRJ6YMv9m';
 let syncId = '';
-try {
-    syncId = storage.getItem('shopping_list_id') || '';
-} catch (e) {
-    console.error("Failed to read syncId:", e);
-}
+
+// IMPORTANT: Read ?list= param IMMEDIATELY before any code can wipe the URL
+(function readListParamEarly() {
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const listParam = urlParams.get('list');
+        if (listParam) {
+            // Store immediately so initSync & navigation don't overwrite with a new key
+            syncId = listParam;
+            storage.setItem('shopping_list_id', listParam);
+            console.log('[Sync] Joining shared list from URL:', listParam);
+        } else {
+            syncId = storage.getItem('shopping_list_id') || '';
+        }
+    } catch (e) {
+        console.error("Failed to read syncId:", e);
+        try { syncId = storage.getItem('shopping_list_id') || ''; } catch(_) {}
+    }
+})();
+
 let isSyncing = false;
 let syncTimeout = null;
 
@@ -577,37 +596,147 @@ function setupShoppingEventListeners() {
         });
     }
 
-    // Share list button
-    if (shareListBtn) {
-        shareListBtn.addEventListener('click', () => {
-        if (!syncId) {
-            alert("Pilvisynkronointi ei ole valmis vielä. Yritä hetken kuluttua uudelleen.");
-            return;
-        }
-        
-        // Create sharing URL
-        const shareUrl = `${window.location.origin}${window.location.pathname}?list=${syncId}`;
-        
-        // Copy to clipboard
-        navigator.clipboard.writeText(shareUrl).then(() => {
-            // Temporarily change button text for premium micro-feedback
-            const originalText = shareListBtn.innerHTML;
-            shareListBtn.innerHTML = "✅ Linkki kopioitu leikepöydälle!";
-            shareListBtn.style.borderColor = "#10b981";
-            shareListBtn.style.color = "#10b981";
-            
-            setTimeout(() => {
-                shareListBtn.innerHTML = originalText;
-                shareListBtn.style.borderColor = "";
-                shareListBtn.style.color = "";
-            }, 3000);
-        }).catch(err => {
-            console.error("Failed to copy link: ", err);
-            // Fallback prompt
-            prompt("Kopioi tästä linkki perheellesi:", shareUrl);
+    // Show sync code button
+    if (showSyncCodeBtn) {
+        showSyncCodeBtn.addEventListener('click', showSyncCodeModal);
+    }
+
+    // Join sync button
+    if (joinSyncBtn) {
+        joinSyncBtn.addEventListener('click', showJoinModal);
+    }
+
+    // Modal close
+    if (syncModalClose) {
+        syncModalClose.addEventListener('click', closeSyncModal);
+    }
+    if (syncModalOverlay) {
+        syncModalOverlay.addEventListener('click', (e) => {
+            if (e.target === syncModalOverlay) closeSyncModal();
+        });
+    }
+}
+
+function closeSyncModal() {
+    if (syncModalOverlay) syncModalOverlay.style.display = 'none';
+}
+
+function showSyncCodeModal() {
+    if (!syncModalContent || !syncModalOverlay) return;
+    const displayCode = syncId ? syncId.toUpperCase() : '...';
+    syncModalContent.innerHTML = `
+        <div style="text-align:center; padding: 0.5rem 0;">
+            <div style="font-size: 2.8rem; margin-bottom: 0.5rem;">📋</div>
+            <h3 style="margin: 0 0 0.5rem; font-size: 1.1rem; color: var(--text-color);">Tämän laitteen sync-koodi</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0 0 1.2rem;">Anna tämä koodi toiselle laitteelle, niin listat yhdistyvät.</p>
+            <div id="sync-code-display" style="
+                font-family: monospace;
+                font-size: 2rem;
+                font-weight: 700;
+                letter-spacing: 0.4em;
+                background: var(--bg-hover);
+                border: 2px solid var(--primary-color);
+                border-radius: 12px;
+                padding: 1rem 1.5rem;
+                margin-bottom: 1.2rem;
+                color: var(--primary-color);
+                cursor: pointer;
+                user-select: all;
+            ">${displayCode}</div>
+            <button id="copy-sync-code-btn" style="
+                background: var(--primary-color);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                padding: 0.7rem 1.5rem;
+                font-size: 0.95rem;
+                font-weight: 600;
+                cursor: pointer;
+                width: 100%;
+            ">📋 Kopioi koodi leikepöydälle</button>
+        </div>
+    `;
+    syncModalOverlay.style.display = 'flex';
+    
+    document.getElementById('copy-sync-code-btn').addEventListener('click', () => {
+        navigator.clipboard.writeText(syncId).then(() => {
+            document.getElementById('copy-sync-code-btn').textContent = '✅ Kopioitu!';
+            setTimeout(() => { document.getElementById('copy-sync-code-btn').textContent = '📋 Kopioi koodi leikepöydälle'; }, 2000);
+        }).catch(() => {
+            prompt('Kopioi tämä koodi:', syncId);
         });
     });
 }
+
+function showJoinModal() {
+    if (!syncModalContent || !syncModalOverlay) return;
+    syncModalContent.innerHTML = `
+        <div style="text-align:center; padding: 0.5rem 0;">
+            <div style="font-size: 2.8rem; margin-bottom: 0.5rem;">🔗</div>
+            <h3 style="margin: 0 0 0.5rem; font-size: 1.1rem; color: var(--text-color);">Liity jaettuun listaan</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0 0 1.2rem;">Syötä toisen laitteen antama sync-koodi alle. Löydät sen painamalla "📋 Oma koodi".</p>
+            <input id="join-code-input" type="text" placeholder="esim. A1B2C3D4" autocomplete="off" autocorrect="off" autocapitalize="characters" style="
+                width: 100%;
+                box-sizing: border-box;
+                font-family: monospace;
+                font-size: 1.6rem;
+                font-weight: 700;
+                letter-spacing: 0.2em;
+                text-align: center;
+                text-transform: uppercase;
+                background: var(--bg-hover);
+                border: 2px solid var(--border-color);
+                border-radius: 12px;
+                padding: 0.9rem 1rem;
+                margin-bottom: 1.2rem;
+                color: var(--text-color);
+                outline: none;
+            ">
+            <button id="join-code-submit-btn" style="
+                background: var(--primary-color);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                padding: 0.7rem 1.5rem;
+                font-size: 0.95rem;
+                font-weight: 600;
+                cursor: pointer;
+                width: 100%;
+                margin-bottom: 0.6rem;
+            ">🔗 Liity listalle</button>
+            <p id="join-code-error" style="color: #ef4444; font-size: 0.85rem; min-height: 1.2em; margin: 0;"></p>
+        </div>
+    `;
+    syncModalOverlay.style.display = 'flex';
+    
+    const joinInput = document.getElementById('join-code-input');
+    joinInput.focus();
+    
+    document.getElementById('join-code-submit-btn').addEventListener('click', async () => {
+        const code = joinInput.value.trim().toLowerCase();
+        if (!code || code.length < 4) {
+            document.getElementById('join-code-error').textContent = 'Syötä kelvollinen koodi.';
+            return;
+        }
+        document.getElementById('join-code-submit-btn').textContent = 'Yhdistetään...';
+        document.getElementById('join-code-submit-btn').disabled = true;
+        
+        // Save new syncId and load from cloud
+        syncId = code;
+        storage.setItem('shopping_list_id', code);
+        closeSyncModal();
+        updateSyncStatus('syncing', 'Yhdistetään...');
+        
+        try {
+            await loadFromCloud();
+            // If load succeeded, we're now on the shared list
+            if (!isSyncing) {
+                updateSyncStatus('active', 'Yhdistetty jaettuun listaan');
+            }
+        } catch(e) {
+            updateSyncStatus('error', 'Yhdistäminen epäonnistui');
+        }
+    });
 }
 
 // Generation of a clean, short unique perheavain if not sharing
@@ -616,31 +745,26 @@ function generateUniqueKey() {
 }
 
 async function initSync() {
-    // Check URL parameters for sharing list ID
-    const urlParams = new URLSearchParams(window.location.search);
-    const listParam = urlParams.get('list');
-    
-    if (listParam) {
-        syncId = listParam;
-        storage.setItem('shopping_list_id', syncId);
-        // Silently clean URL
-        window.history.replaceState(null, null, window.location.pathname + '?tab=shopping');
-    }
+    // NOTE: ?list= param was already read and stored into syncId at page load
+    // (see readListParamEarly IIFE above). We do NOT re-read it here to avoid
+    // race conditions with history.replaceState in setupNavigation.
     
     if (!syncId) {
         updateSyncStatus('syncing', 'Luodaan pilvilistaa...');
         try {
-            // Generate a random unique perheavain and save current items immediately to kvdb.io
+            // Generate a random unique key and save current items immediately to kvdb.io
             syncId = generateUniqueKey();
             storage.setItem('shopping_list_id', syncId);
-            updateSyncStatus('active', 'Yhdistetty pilveen');
+            console.log('[Sync] Created new shared list:', syncId);
             await saveToCloud();
+            updateSyncStatus('active', 'Yhdistetty pilveen');
         } catch (e) {
             console.error("Failed to create shared list:", e);
             updateSyncStatus('error', 'Vain paikallinen tila ( offline )');
         }
     } else {
-        // Fetch existing list
+        console.log('[Sync] Using existing list ID:', syncId);
+        // Fetch existing list from cloud
         await loadFromCloud();
     }
     

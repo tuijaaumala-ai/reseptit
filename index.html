@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="index.css?v=1.1.0">
+    <link rel="stylesheet" href="index.css?v=1.1.2">
 </head>
 <body>
     <!-- Top Navigation Bar -->
@@ -109,9 +109,20 @@
                         <span class="sync-dot active" id="sync-indicator"></span>
                         <span id="sync-status-text">Ladataan...</span>
                     </div>
-                    <button id="share-list-btn" class="share-btn">🔗 Jaa lista kumppanille</button>
+                    <div class="sync-btn-group">
+                        <button id="show-sync-code-btn" class="share-btn">📋 Oma koodi</button>
+                        <button id="join-sync-btn" class="share-btn join-btn">🔗 Liity listalle</button>
+                    </div>
                 </div>
             </header>
+
+            <!-- Sync Code Modal -->
+            <div id="sync-modal-overlay" class="sync-modal-overlay" style="display:none;">
+                <div class="sync-modal">
+                    <button id="sync-modal-close" class="sync-modal-close">✕</button>
+                    <div id="sync-modal-content"><!-- dynamic --></div>
+                </div>
+            </div>
 
             <!-- Favorites Grid Section -->
             <section class="shopping-favorites">
@@ -164,8 +175,8 @@
     </div>
 
     <!-- Load compiled recipe database -->
-    <script src="recipes.js?v=1.1.0"></script>
+    <script src="recipes.js?v=1.1.2"></script>
     <!-- Load main application logic -->
-    <script src="app.js?v=1.1.0"></script>
+    <script src="app.js?v=1.1.2"></script>
 </body>
 </html>
