@@ -1325,3 +1325,58 @@ input:checked + .slider:before {
     background: var(--border-color);
     border-radius: 4px;
 }
+
+/* ========================================= */
+/* 📱 Widget Mode Styles                     */
+/* ========================================= */
+body.widget-mode {
+    background-color: var(--bg-app);
+    height: 100vh;
+    overflow: auto;
+}
+
+body.widget-mode .app-nav {
+    display: none !important;
+}
+
+body.widget-mode #panel-recipes {
+    display: none !important;
+}
+
+body.widget-mode #panel-shopping {
+    display: block !important;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+body.widget-mode .shopping-container {
+    padding: 0.75rem !important;
+    max-width: 100% !important;
+    min-height: 100vh !important;
+    box-shadow: none !important;
+}
+
+body.widget-mode .shopping-header {
+    margin-bottom: 0.75rem !important;
+    padding-bottom: 0.5rem !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+body.widget-mode .shopping-title-group h2 {
+    font-size: 1.15rem !important;
+}
+
+body.widget-mode .sync-btn-group,
+body.widget-mode .shopping-subtitle,
+body.widget-mode .shopping-favorites,
+body.widget-mode .add-item-section,
+body.widget-mode .shopping-actions {
+    display: none !important;
+}
+
+body.widget-mode .shopping-list-wrapper {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    min-height: auto !important;
+}

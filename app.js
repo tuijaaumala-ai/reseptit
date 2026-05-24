@@ -197,7 +197,12 @@ function setupNavigation() {
 
             // Adjust URL to prevent carrying hashes or search terms to other tabs
             if (targetId === 'panel-shopping') {
-                history.replaceState(null, null, window.location.pathname + '?tab=shopping');
+                const isWidget = new URLSearchParams(window.location.search).has('widget');
+                if (isWidget) {
+                    history.replaceState(null, null, window.location.pathname + '?widget=true');
+                } else {
+                    history.replaceState(null, null, window.location.pathname + '?tab=shopping');
+                }
             } else {
                 history.replaceState(null, null, window.location.pathname + (activeRecipeId ? `#${activeRecipeId}` : ''));
             }
@@ -207,7 +212,11 @@ function setupNavigation() {
     // Check query params to switch to shopping tab on load
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get('tab');
-    if (tabParam === 'shopping' || urlParams.has('list')) {
+    const isWidget = urlParams.has('widget') || urlParams.get('mode') === 'widget';
+    if (isWidget) {
+        document.body.classList.add('widget-mode');
+    }
+    if (tabParam === 'shopping' || urlParams.has('list') || isWidget) {
         const shopTab = document.getElementById('tab-shopping');
         if (shopTab) {
             shopTab.click();
@@ -446,7 +455,8 @@ function renderShoppingList() {
     // Sort logic based on Shopping Mode (Ostosmoodi)
     // If Shopping Mode is checked: move checked/bought items to the bottom of the list
     let sortedList = [...shoppingList];
-    if (shoppingModeCheckbox && shoppingModeCheckbox.checked) {
+    const isWidgetMode = document.body.classList.contains('widget-mode');
+    if ((shoppingModeCheckbox && shoppingModeCheckbox.checked) || isWidgetMode) {
         sortedList.sort((a, b) => {
             if (a.bought && !b.bought) return 1;
             if (!a.bought && b.bought) return -1;
@@ -468,7 +478,7 @@ function renderShoppingList() {
         
         const isFav = favorites.some(fav => fav.name.toLowerCase() === item.name.toLowerCase());
         const quantity = item.quantity || 1;
-        const isShoppingMode = shoppingModeCheckbox && shoppingModeCheckbox.checked;
+        const isShoppingMode = (shoppingModeCheckbox && shoppingModeCheckbox.checked) || isWidgetMode;
 
         const leftHTML = `
             <span class="name">${escapeHTML(item.name)}</span>
