@@ -864,7 +864,19 @@ function showSyncCodeModal() {
                 font-weight: 600;
                 cursor: pointer;
                 width: 100%;
+                margin-bottom: 0.65rem;
             ">📋 Kopioi koodi leikepöydälle</button>
+            <button id="copy-widget-link-btn" style="
+                background: transparent;
+                border: 1px solid var(--border-color);
+                color: var(--text-main);
+                border-radius: 8px;
+                padding: 0.7rem 1.5rem;
+                font-size: 0.95rem;
+                font-weight: 600;
+                cursor: pointer;
+                width: 100%;
+            ">📱 Kopioi Widget-osoite puhelimeen</button>
         </div>
     `;
     syncModalOverlay.style.display = 'flex';
@@ -875,6 +887,16 @@ function showSyncCodeModal() {
             setTimeout(() => { document.getElementById('copy-sync-code-btn').textContent = '📋 Kopioi koodi leikepöydälle'; }, 2000);
         }).catch(() => {
             prompt('Kopioi tämä koodi:', syncId);
+        });
+    });
+
+    document.getElementById('copy-widget-link-btn').addEventListener('click', () => {
+        const widgetUrl = window.location.origin + window.location.pathname + '?list=' + syncId + '&widget=true';
+        navigator.clipboard.writeText(widgetUrl).then(() => {
+            document.getElementById('copy-widget-link-btn').textContent = '✅ Widget-osoite kopioitu!';
+            setTimeout(() => { document.getElementById('copy-widget-link-btn').textContent = '📱 Kopioi Widget-osoite puhelimeen'; }, 2000);
+        }).catch(() => {
+            prompt('Kopioi tämä Widget-osoite:', widgetUrl);
         });
     });
 }
