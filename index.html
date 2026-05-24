@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="html/favicon.ico" type="image/x-icon">
+    <title>Reseptiarkisto — Aumalan Reseptikirja</title>
+    <!-- Google Fonts for premium typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar: Search and Recipe List -->
+        <aside class="sidebar" id="sidebar">
+            <header class="sidebar-header">
+                <div class="brand">
+                    <span class="brand-icon">🍳</span>
+                    <div class="brand-text">
+                        <h1>Reseptiarkisto</h1>
+                        <p class="brand-subtitle">Aumalan perhereseptit</p>
+                    </div>
+                </div>
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="search-input" placeholder="Hae reseptiä tai ainesosaa..." autocomplete="off">
+                    <button id="clear-search" class="clear-btn" title="Tyhjennä haku" style="display: none;">✕</button>
+                </div>
+                <div class="stats-counter">
+                    Löydetty <strong id="recipes-count">0</strong> reseptiä
+                </div>
+            </header>
+            <nav class="recipe-list" id="recipe-list" aria-label="Reseptiluettelo">
+                <!-- Dynamically populated recipe items will go here -->
+            </nav>
+        </aside>
+
+        <!-- Main Content Area: Selected Recipe Detail -->
+        <main class="main-content" id="main-content">
+            <!-- Empty state when no recipe is selected -->
+            <div class="empty-state" id="empty-state">
+                <div class="empty-state-card">
+                    <div class="empty-icon">🍲</div>
+                    <h2>Tervetuloa Aumalan Reseptikirjaan!</h2>
+                    <p>Valitse resepti vasemman puolen listalta aloittaaksesi tai hae tiettyä reseptiä tai ainesosaa hakukentän avulla.</p>
+                </div>
+            </div>
+
+            <!-- Recipe Detail View -->
+            <article class="recipe-detail" id="recipe-detail" style="display: none;">
+                <header class="recipe-header">
+                    <button class="back-btn" id="back-btn" aria-label="Takaisin reseptilistaan">
+                        <span class="back-arrow">←</span> Takaisin listaan
+                    </button>
+                    <div class="recipe-header-content">
+                        <h2 id="recipe-title" class="recipe-title"></h2>
+                        <div id="recipe-desc" class="recipe-desc"></div>
+                    </div>
+                </header>
+
+                <div class="recipe-body">
+                    <!-- Ingredients Section -->
+                    <section class="ingredients-section" aria-labelledby="ingredients-heading">
+                        <h3 id="ingredients-heading">Ainekset</h3>
+                        <p class="section-tip">💡 Voit klikata ainesosia merkitäksesi ne hankituiksi/käytetyiksi.</p>
+                        <ul class="ingredients-list" id="recipe-ingredients">
+                            <!-- Dynamic ingredients loaded here -->
+                        </ul>
+                    </section>
+
+                    <!-- Instructions Section -->
+                    <section class="instructions-section" aria-labelledby="instructions-heading">
+                        <h3 id="instructions-heading">Ohjeet</h3>
+                        <div class="instructions-content" id="recipe-instructions">
+                            <!-- Dynamic instruction steps loaded here -->
+                        </div>
+                    </section>
+                </div>
+            </article>
+        </main>
+    </div>
+
+    <!-- Load compiled recipe database -->
+    <script src="recipes.js"></script>
+    <!-- Load main application logic -->
+    <script src="app.js"></script>
+</body>
+</html>
