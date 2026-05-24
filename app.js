@@ -127,6 +127,8 @@ let syncId = '';
 
 let isSyncing = false;
 let syncTimeout = null;
+let lastCloudSaveTime = 0;  // timestamp of last successful cloud save
+let hasPendingChanges = false; // true while local changes not yet saved to cloud
 
 // ==========================================
 // Initialization
@@ -565,9 +567,15 @@ function saveAndSync() {
     saveLocallyOnly();
     renderShoppingList();
     
-    // Throttled/Debounced cloud synchronization to avoid API spamming
+    // Mark as having unsaved changes (blocks poll from overwriting pending items)
+    hasPendingChanges = true;
+    
+    // Debounced cloud save (500ms)
     if (syncTimeout) clearTimeout(syncTimeout);
-    syncTimeout = setTimeout(saveToCloud, 1000);
+    syncTimeout = setTimeout(async () => {
+        await saveToCloud();
+        hasPendingChanges = false;
+    }, 500);
 }
 
 function saveLocallyOnly() {
@@ -776,13 +784,15 @@ async function initSync() {
 }
 
 async function loadFromCloud() {
-    // Don't skip poll just because we're saving — isSyncing only blocks concurrent loads
     if (!syncId) return;
-    if (isSyncing) return; // only skip if we're mid-save on THIS device
+    // Block poll if we have local changes not yet saved — prevents overwriting pending items
+    if (isSyncing || hasPendingChanges) {
+        console.log('[Sync] Poll skipped — pending changes or save in progress');
+        return;
+    }
     try {
         const response = await fetch(`https://kvdb.io/${bucketId}/${syncId}?t=${Date.now()}`);
         if (response.status === 404) {
-            // Key doesn't exist yet — first time use
             updateSyncStatus('active', 'Yhdistetty pilveen');
             return;
         }
@@ -805,15 +815,9 @@ async function loadFromCloud() {
         }
 
         // === SMART MERGE by item ID ===
-        // Never simply overwrite — merge so no item is lost due to timing.
-        // Rule: if an item exists in EITHER local or cloud, keep it.
-        //       Update bought/quantity from whichever version is newer (higher id timestamp).
-        //       Exception: if cloud is explicitly empty [] (cleared), respect that clear.
-        
         const cloudIsEmpty = data.length === 0;
-        const localIsEmpty = shoppingList.length === 0;
         
-        if (cloudIsEmpty && !localIsEmpty) {
+        if (cloudIsEmpty && shoppingList.length > 0) {
             // Cloud was explicitly cleared — wipe local too
             console.log('[Sync] Cloud is empty — clearing local list');
             shoppingList = [];
@@ -829,18 +833,16 @@ async function loadFromCloud() {
         
         let changed = false;
         
-        // Merge cloud items into local (add or update)
+        // Step 1: Add cloud items that are missing locally
         for (const [id, cloudItem] of cloudMap) {
             if (!localMap.has(id)) {
-                // Cloud has an item local doesn't — add it
                 console.log('[Sync] Adding missing item from cloud:', cloudItem.name);
                 shoppingList.push(cloudItem);
                 changed = true;
             } else {
-                // Both have it — sync the bought/quantity state
+                // Update bought/quantity state from cloud
                 const localItem = localMap.get(id);
                 if (localItem.bought !== cloudItem.bought || localItem.quantity !== cloudItem.quantity) {
-                    // Use the cloud version's state (cloud is treated as authority for state changes)
                     localItem.bought = cloudItem.bought;
                     localItem.quantity = cloudItem.quantity;
                     changed = true;
@@ -848,15 +850,24 @@ async function loadFromCloud() {
             }
         }
         
-        // Note: items in local but NOT in cloud means they were deleted on another device.
-        // We respect that deletion only if cloud had items (it wasn't a clear-all).
+        // Step 2: Remove local items that were deleted by another device,
+        // BUT only if they were known to exist at the time of our last save.
+        // Items added AFTER lastCloudSaveTime are pending uploads — don't remove them.
         if (!cloudIsEmpty) {
             const beforeLen = shoppingList.length;
-            shoppingList = shoppingList.filter(item => cloudMap.has(item.id));
-            if (shoppingList.length !== beforeLen) {
-                console.log('[Sync] Removed', beforeLen - shoppingList.length, 'deleted items');
-                changed = true;
-            }
+            shoppingList = shoppingList.filter(item => {
+                if (cloudMap.has(item.id)) return true; // in cloud, keep
+                // Extract the creation timestamp from the item ID (first 13 chars = Date.now())
+                const addedAt = parseInt(item.id.substring(0, 13)) || 0;
+                const isPendingUpload = addedAt > lastCloudSaveTime;
+                if (isPendingUpload) {
+                    console.log('[Sync] Keeping pending item (not yet saved):', item.name);
+                    return true;  // keep — it was added after our last save, hasn't synced yet
+                }
+                console.log('[Sync] Removing item deleted by another device:', item.name);
+                return false;
+            });
+            if (shoppingList.length !== beforeLen) changed = true;
         }
         
         if (changed) {
@@ -886,6 +897,7 @@ async function saveToCloud() {
             throw new Error(`HTTP ${response.status}: ${errText}`);
         }
         console.log('[Sync] Saved OK');
+        lastCloudSaveTime = Date.now();  // mark successful save time
         updateSyncStatus('active', 'Yhdistetty pilveen');
     } catch (e) {
         console.error("Sync save failed:", e);
