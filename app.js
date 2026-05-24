@@ -604,6 +604,7 @@ function setupShoppingEventListeners() {
         });
     });
 }
+}
 
 // ==========================================
 // 📡 Real-time Cloud Synchronization (npoint)
