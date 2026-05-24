@@ -547,13 +547,16 @@ function toggleFavorite(name) {
 }
 
 function clearList() {
-    // Show beautiful custom notification confirmation or prompt
     if (shoppingList.length === 0) return;
     
     const confirmClear = confirm("Haluatko tyhjentää koko ostoslistan?");
     if (confirmClear) {
         shoppingList = [];
-        saveAndSync();
+        saveLocallyOnly();
+        renderShoppingList();
+        // Clear is critical — save immediately, no debounce
+        if (syncTimeout) clearTimeout(syncTimeout);
+        saveToCloud();
     }
 }
 
@@ -768,33 +771,52 @@ async function initSync() {
         await loadFromCloud();
     }
     
-    // Background polling every 10 seconds
-    setInterval(loadFromCloud, 10000);
+    // Background polling every 5 seconds
+    setInterval(loadFromCloud, 5000);
 }
 
 async function loadFromCloud() {
-    if (!syncId || isSyncing) return;
+    // Don't skip poll just because we're saving — isSyncing only blocks concurrent loads
+    if (!syncId) return;
+    if (isSyncing) return; // only skip if we're mid-save on THIS device
     try {
-        const response = await fetch(`https://kvdb.io/${bucketId}/${syncId}`);
+        const response = await fetch(`https://kvdb.io/${bucketId}/${syncId}?t=${Date.now()}`);
         if (response.status === 404) {
-            // Key doesn't exist on the cloud yet (which is fine, e.g. newly generated key)
+            // Key doesn't exist yet — first time use
+            updateSyncStatus('active', 'Yhdistetty pilveen');
             return;
         }
-        if (!response.ok) throw new Error("Sync load failed");
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
-        const data = await response.json(); // Natively parses the full JSON array
-        if (data && Array.isArray(data)) {
-            // Check if lists are actually different to prevent redraw loops
-            if (JSON.stringify(shoppingList) !== JSON.stringify(data)) {
-                shoppingList = data;
-                saveLocallyOnly();
-                renderShoppingList();
-            }
-            updateSyncStatus('active', 'Yhdistetty pilveen');
+        const text = await response.text();
+        console.log('[Sync] Raw cloud response:', text.substring(0, 100));
+        
+        // Parse safely
+        let data;
+        try { data = JSON.parse(text); } catch(e) {
+            console.error('[Sync] Failed to parse cloud data:', text);
+            return;
         }
+        
+        // Accept both empty array AND populated array
+        if (!Array.isArray(data)) {
+            console.warn('[Sync] Cloud returned non-array:', data);
+            return;
+        }
+        
+        // Update local list if different
+        const localJson = JSON.stringify(shoppingList);
+        const cloudJson = JSON.stringify(data);
+        if (localJson !== cloudJson) {
+            console.log('[Sync] List changed, updating UI. Cloud items:', data.length, 'Local items:', shoppingList.length);
+            shoppingList = data;
+            saveLocallyOnly();
+            renderShoppingList();
+        }
+        updateSyncStatus('active', 'Yhdistetty pilveen');
     } catch (e) {
         console.error("Sync load failed:", e);
-        updateSyncStatus('error', 'Yhteysvirhe ( tallennus paikallisesti )');
+        updateSyncStatus('error', 'Yhteysvirhe');
     }
 }
 
@@ -803,16 +825,21 @@ async function saveToCloud() {
     isSyncing = true;
     updateSyncStatus('syncing', 'Tallennetaan...');
     try {
-        // Post the raw JSON string directly to kvdb.io (supported naturally with CORS)
+        const body = JSON.stringify(shoppingList);
+        console.log('[Sync] Saving to cloud. Items:', shoppingList.length, 'Key:', syncId);
         const response = await fetch(`https://kvdb.io/${bucketId}/${syncId}`, {
             method: 'POST',
-            body: JSON.stringify(shoppingList)
+            body: body
         });
-        if (!response.ok) throw new Error("Sync save failed");
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errText}`);
+        }
+        console.log('[Sync] Saved OK');
         updateSyncStatus('active', 'Yhdistetty pilveen');
     } catch (e) {
         console.error("Sync save failed:", e);
-        updateSyncStatus('error', 'Synkronointi epäonnistui');
+        updateSyncStatus('error', `Tallennus epäonnistui: ${e.message}`);
     } finally {
         isSyncing = false;
     }
