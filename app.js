@@ -158,7 +158,10 @@ function setupNavigation() {
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get('tab');
     if (tabParam === 'shopping' || urlParams.has('list')) {
-        document.getElementById('tab-shopping').click();
+        const shopTab = document.getElementById('tab-shopping');
+        if (shopTab) {
+            shopTab.click();
+        }
     }
 }
 
@@ -695,9 +698,13 @@ async function saveToCloud() {
 }
 
 function updateSyncStatus(status, text) {
-    syncIndicator.className = 'sync-dot';
-    syncIndicator.classList.add(status);
-    syncStatusText.textContent = text;
+    if (syncIndicator) {
+        syncIndicator.className = 'sync-dot';
+        syncIndicator.classList.add(status);
+    }
+    if (syncStatusText) {
+        syncStatusText.textContent = text;
+    }
 }
 
 // ==========================================
