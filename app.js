@@ -613,20 +613,20 @@ function setupShoppingEventListeners() {
 function serializeList(list) {
     return list.map(item => {
         const id = item.id ? item.id.substring(0, 6) : Math.random().toString(36).substring(2, 8);
-        const name = item.name ? item.name.replace(/[:;]/g, ' ') : '';
+        const name = item.name ? encodeURIComponent(item.name.replace(/[_;]/g, ' ')) : '';
         const qty = item.quantity || 1;
         const bought = item.bought ? 1 : 0;
-        return `${id}:${name}:${qty}:${bought}`;
+        return `${id}_${name}_${qty}_${bought}`;
     }).join(';');
 }
 
 function deserializeList(str) {
     if (!str) return [];
     return str.split(';').filter(Boolean).map(part => {
-        const [id, name, qty, bought] = part.split(':');
+        const [id, name, qty, bought] = part.split('_');
         return {
             id: id || Date.now().toString() + Math.random().toString(36).substring(2, 4),
-            name: name || '',
+            name: name ? decodeURIComponent(name) : '',
             quantity: parseInt(qty, 10) || 1,
             bought: bought === '1'
         };
