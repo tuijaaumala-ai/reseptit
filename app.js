@@ -470,19 +470,9 @@ function renderShoppingList() {
         const quantity = item.quantity || 1;
         const isShoppingMode = shoppingModeCheckbox && shoppingModeCheckbox.checked;
 
-        let leftHTML = '';
-        if (isShoppingMode) {
-            leftHTML = `
-                <input type="checkbox" id="shop-item-${item.id}" ${item.bought ? 'checked' : ''}>
-                <label for="shop-item-${item.id}">
-                    <span class="name">${escapeHTML(item.name)}</span>
-                </label>
-            `;
-        } else {
-            leftHTML = `
-                <span class="name">${escapeHTML(item.name)}</span>
-            `;
-        }
+        const leftHTML = `
+            <span class="name">${escapeHTML(item.name)}</span>
+        `;
 
         let actionsHTML = '';
         if (isShoppingMode) {
@@ -514,9 +504,15 @@ function renderShoppingList() {
             </div>
         `;
 
-        // Checkbox bought toggle
-        const checkbox = li.querySelector('input[type="checkbox"]');
-        if (checkbox) checkbox.addEventListener('change', () => toggleBought(item.id));
+        // Click left area to toggle bought status (only in shopping mode)
+        if (isShoppingMode) {
+            const leftEl = li.querySelector('.shopping-item-left');
+            if (leftEl) {
+                leftEl.style.cursor = 'pointer';
+                leftEl.title = item.bought ? 'Poista merkintä' : 'Merkitse ostetuksi';
+                leftEl.addEventListener('click', () => toggleBought(item.id));
+            }
+        }
 
         // Stepper buttons
         const decBtn = li.querySelector('.dec-btn');

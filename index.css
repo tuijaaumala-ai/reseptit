@@ -960,6 +960,12 @@ input:checked + .slider:before {
     background-color: rgba(22, 30, 49, 0.35);
 }
 
+.shopping-item.bought .name {
+    text-decoration: line-through;
+    color: var(--text-muted);
+    opacity: 0.6;
+}
+
 @media (prefers-color-scheme: light) {
     .shopping-item.bought {
         background-color: rgba(0, 0, 0, 0.02);
