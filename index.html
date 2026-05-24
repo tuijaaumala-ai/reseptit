@@ -12,74 +12,158 @@
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar: Search and Recipe List -->
-        <aside class="sidebar" id="sidebar">
-            <header class="sidebar-header">
-                <div class="brand">
-                    <span class="brand-icon">🍳</span>
-                    <div class="brand-text">
-                        <h1>Reseptiarkisto</h1>
-                        <p class="brand-subtitle">Aumalan perhereseptit</p>
+    <!-- Top Navigation Bar -->
+    <nav class="app-nav" id="app-nav">
+        <button class="nav-tab active" id="tab-recipes" data-target="panel-recipes">
+            <span class="tab-icon">🍳</span> Reseptit
+        </button>
+        <button class="nav-tab" id="tab-shopping" data-target="panel-shopping">
+            <span class="tab-icon">🛒</span> Ostoslista
+        </button>
+    </nav>
+    
+    <!-- Panel 1: Recipe Browser -->
+    <div id="panel-recipes" class="tab-panel active">
+        <div class="app-container">
+            <!-- Sidebar: Search and Recipe List -->
+            <aside class="sidebar" id="sidebar">
+                <header class="sidebar-header">
+                    <div class="brand">
+                        <span class="brand-icon">🍳</span>
+                        <div class="brand-text">
+                            <h1>Reseptiarkisto</h1>
+                            <p class="brand-subtitle">Aumalan perhereseptit</p>
+                        </div>
                     </div>
-                </div>
-                <div class="search-box">
-                    <span class="search-icon">🔍</span>
-                    <input type="text" id="search-input" placeholder="Hae reseptiä tai ainesosaa..." autocomplete="off">
-                    <button id="clear-search" class="clear-btn" title="Tyhjennä haku" style="display: none;">✕</button>
-                </div>
-                <div class="stats-counter">
-                    Löydetty <strong id="recipes-count">0</strong> reseptiä
-                </div>
-            </header>
-            <nav class="recipe-list" id="recipe-list" aria-label="Reseptiluettelo">
-                <!-- Dynamically populated recipe items will go here -->
-            </nav>
-        </aside>
-
-        <!-- Main Content Area: Selected Recipe Detail -->
-        <main class="main-content" id="main-content">
-            <!-- Empty state when no recipe is selected -->
-            <div class="empty-state" id="empty-state">
-                <div class="empty-state-card">
-                    <div class="empty-icon">🍲</div>
-                    <h2>Tervetuloa Aumalan Reseptikirjaan!</h2>
-                    <p>Valitse resepti vasemman puolen listalta aloittaaksesi tai hae tiettyä reseptiä tai ainesosaa hakukentän avulla.</p>
-                </div>
-            </div>
-
-            <!-- Recipe Detail View -->
-            <article class="recipe-detail" id="recipe-detail" style="display: none;">
-                <header class="recipe-header">
-                    <button class="back-btn" id="back-btn" aria-label="Takaisin reseptilistaan">
-                        <span class="back-arrow">←</span> Takaisin listaan
-                    </button>
-                    <div class="recipe-header-content">
-                        <h2 id="recipe-title" class="recipe-title"></h2>
-                        <div id="recipe-desc" class="recipe-desc"></div>
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="search-input" placeholder="Hae reseptiä tai ainesosaa..." autocomplete="off">
+                        <button id="clear-search" class="clear-btn" title="Tyhjennä haku" style="display: none;">✕</button>
+                    </div>
+                    <div class="stats-counter">
+                        Löydetty <strong id="recipes-count">0</strong> reseptiä
                     </div>
                 </header>
+                <nav class="recipe-list" id="recipe-list" aria-label="Reseptiluettelo">
+                    <!-- Dynamically populated recipe items will go here -->
+                </nav>
+            </aside>
 
-                <div class="recipe-body">
-                    <!-- Ingredients Section -->
-                    <section class="ingredients-section" aria-labelledby="ingredients-heading">
-                        <h3 id="ingredients-heading">Ainekset</h3>
-                        <p class="section-tip">💡 Voit klikata ainesosia merkitäksesi ne hankituiksi/käytetyiksi.</p>
-                        <ul class="ingredients-list" id="recipe-ingredients">
-                            <!-- Dynamic ingredients loaded here -->
-                        </ul>
-                    </section>
-
-                    <!-- Instructions Section -->
-                    <section class="instructions-section" aria-labelledby="instructions-heading">
-                        <h3 id="instructions-heading">Ohjeet</h3>
-                        <div class="instructions-content" id="recipe-instructions">
-                            <!-- Dynamic instruction steps loaded here -->
-                        </div>
-                    </section>
+            <!-- Main Content Area: Selected Recipe Detail -->
+            <main class="main-content" id="main-content">
+                <!-- Empty state when no recipe is selected -->
+                <div class="empty-state" id="empty-state">
+                    <div class="empty-state-card">
+                        <div class="empty-icon">🍲</div>
+                        <h2>Tervetuloa Aumalan Reseptikirjaan!</h2>
+                        <p>Valitse resepti vasemman puolen listalta aloittaaksesi tai hae tiettyä reseptiä tai ainesosaa hakukentän avulla.</p>
+                    </div>
                 </div>
-            </article>
-        </main>
+
+                <!-- Recipe Detail View -->
+                <article class="recipe-detail" id="recipe-detail" style="display: none;">
+                    <header class="recipe-header">
+                        <button class="back-btn" id="back-btn" aria-label="Takaisin reseptilistaan">
+                            <span class="back-arrow">←</span> Takaisin listaan
+                        </button>
+                        <div class="recipe-header-content">
+                            <h2 id="recipe-title" class="recipe-title"></h2>
+                            <div id="recipe-desc" class="recipe-desc"></div>
+                        </div>
+                    </header>
+
+                    <div class="recipe-body">
+                        <!-- Ingredients Section -->
+                        <section class="ingredients-section" aria-labelledby="ingredients-heading">
+                            <h3 id="ingredients-heading">Ainekset</h3>
+                            <p class="section-tip">💡 Voit klikata ainesosia merkitäksesi ne hankituiksi/käytetyiksi.</p>
+                            <ul class="ingredients-list" id="recipe-ingredients">
+                                <!-- Dynamic ingredients loaded here -->
+                            </ul>
+                        </section>
+
+                        <!-- Instructions Section -->
+                        <section class="instructions-section" aria-labelledby="instructions-heading">
+                            <h3 id="instructions-heading">Ohjeet</h3>
+                            <div class="instructions-content" id="recipe-instructions">
+                                <!-- Dynamic instruction steps loaded here -->
+                            </div>
+                        </section>
+                    </div>
+                </article>
+            </main>
+        </div>
+    </div>
+
+    <!-- Panel 2: Shared Shopping List -->
+    <div id="panel-shopping" class="tab-panel">
+        <div class="shopping-container">
+            <!-- Header and Sync indicator -->
+            <header class="shopping-header">
+                <div class="shopping-title-group">
+                    <h2>Perheen Ostoslista</h2>
+                    <p class="shopping-subtitle">Reaaliaikainen synkronointi käytössä</p>
+                </div>
+                <div class="sync-controls">
+                    <div class="sync-status">
+                        <span class="sync-dot active" id="sync-indicator"></span>
+                        <span id="sync-status-text">Ladataan...</span>
+                    </div>
+                    <button id="share-list-btn" class="share-btn">🔗 Jaa lista kumppanille</button>
+                </div>
+            </header>
+
+            <!-- Favorites Grid Section -->
+            <section class="shopping-favorites">
+                <h3>Suosikit / Pikalinkit</h3>
+                <p class="favorites-tip">Pikavalitse suosikkeja lisätäksesi ne suoraan ostoslistalle.</p>
+                <div class="favorites-grid" id="favorites-grid">
+                    <!-- Dynamically populated quick items like Maito, Leipä, etc. -->
+                </div>
+            </section>
+
+            <!-- Add Item Form -->
+            <section class="add-item-section">
+                <form id="add-item-form" class="add-item-form">
+                    <div class="form-row">
+                        <div class="input-wrapper name-wrapper">
+                            <input type="text" id="new-item-name" placeholder="Mitä ostetaan? (esim. Maito)" required autocomplete="off">
+                        </div>
+                        <div class="input-wrapper amount-wrapper">
+                            <input type="text" id="new-item-amount" placeholder="Määrä (esim. 2 tlk / 1 kpl)" autocomplete="off">
+                        </div>
+                        <button type="submit" class="add-btn">➕ Lisää</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Shopping List Content -->
+            <section class="shopping-body">
+                <div class="shopping-actions">
+                    <div class="shopping-mode-toggle">
+                        <label class="switch">
+                            <input type="checkbox" id="shopping-mode-checkbox" checked>
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="toggle-label">Ostosmoodi (yliviivaa ostetut)</span>
+                    </div>
+                    <button id="clear-list-btn" class="clear-list-btn">🗑️ Tyhjennä lista</button>
+                </div>
+
+                <div class="shopping-list-wrapper">
+                    <ul id="shopping-list-items" class="shopping-list-items">
+                        <!-- Dynamically populated shopping list items -->
+                    </ul>
+                    
+                    <!-- Empty State for Shopping List -->
+                    <div id="shopping-empty" class="shopping-empty">
+                        <span class="shopping-empty-icon">🛒</span>
+                        <h3>Ostoslistasi on tyhjä!</h3>
+                        <p>Lisää tuotteita yltä tai napauta pikalinkkien suosikkeja.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
     </div>
 
     <!-- Load compiled recipe database -->
