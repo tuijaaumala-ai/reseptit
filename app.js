@@ -609,10 +609,6 @@ function setupShoppingEventListeners() {
 }
 }
 
-// ==========================================
-// 📡 Real-time Cloud Synchronization (npoint)
-// ==========================================
-
 async function initSync() {
     // Check URL parameters for sharing list ID
     const urlParams = new URLSearchParams(window.location.search);
@@ -628,8 +624,8 @@ async function initSync() {
     if (!syncId) {
         updateSyncStatus('syncing', 'Luodaan pilvilistaa...');
         try {
-            // Create initial cloud list
-            const response = await fetch('https://api.npoint.io', {
+            // Create initial cloud list (requires trailing slash to avoid Cloudflare/500 blocks on npoint)
+            const response = await fetch('https://api.npoint.io/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ items: shoppingList })
