@@ -609,6 +609,30 @@ function setupShoppingEventListeners() {
 }
 }
 
+// Compact serialization format for keyvalue.immanuel.co 1024-character URL path value limit
+function serializeList(list) {
+    return list.map(item => {
+        const id = item.id ? item.id.substring(0, 6) : Math.random().toString(36).substring(2, 8);
+        const name = item.name ? item.name.replace(/[:;]/g, ' ') : '';
+        const qty = item.quantity || 1;
+        const bought = item.bought ? 1 : 0;
+        return `${id}:${name}:${qty}:${bought}`;
+    }).join(';');
+}
+
+function deserializeList(str) {
+    if (!str) return [];
+    return str.split(';').filter(Boolean).map(part => {
+        const [id, name, qty, bought] = part.split(':');
+        return {
+            id: id || Date.now().toString() + Math.random().toString(36).substring(2, 4),
+            name: name || '',
+            quantity: parseInt(qty, 10) || 1,
+            bought: bought === '1'
+        };
+    });
+}
+
 async function initSync() {
     // Check URL parameters for sharing list ID
     const urlParams = new URLSearchParams(window.location.search);
@@ -624,17 +648,15 @@ async function initSync() {
     if (!syncId) {
         updateSyncStatus('syncing', 'Luodaan pilvilistaa...');
         try {
-            // Create initial cloud list (requires trailing slash to avoid Cloudflare/500 blocks on npoint)
-            const response = await fetch('https://api.npoint.io/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ items: shoppingList })
-            });
-            const data = await response.json();
-            if (data && data.id) {
-                syncId = data.id;
+            // Get a free keyvalue.immanuel.co App Key (zero configuration, high speed, and CORS enabled)
+            const response = await fetch('https://keyvalue.immanuel.co/api/KeyVal/GetAppKey');
+            if (!response.ok) throw new Error('Failed to get app key');
+            const appKey = await response.json(); // returns the 8-digit app key string
+            if (appKey) {
+                syncId = appKey;
                 storage.setItem('shopping_list_id', syncId);
                 updateSyncStatus('active', 'Yhdistetty pilveen');
+                await saveToCloud();
             } else {
                 throw new Error('Sync creation failed');
             }
@@ -654,14 +676,15 @@ async function initSync() {
 async function loadFromCloud() {
     if (!syncId || isSyncing) return;
     try {
-        const response = await fetch(`https://api.npoint.io/${syncId}`);
+        const response = await fetch(`https://keyvalue.immanuel.co/api/KeyVal/GetValue/${syncId}/shopping_list`);
         if (!response.ok) throw new Error("Sync load failed");
         
-        const data = await response.json();
-        if (data && Array.isArray(data.items)) {
+        const dataStr = await response.json(); // Returns the string value
+        if (dataStr && dataStr !== "null") {
+            const items = deserializeList(dataStr);
             // Check if lists are actually different to prevent redraw loops
-            if (JSON.stringify(shoppingList) !== JSON.stringify(data.items)) {
-                shoppingList = data.items;
+            if (JSON.stringify(shoppingList) !== JSON.stringify(items)) {
+                shoppingList = items;
                 saveLocallyOnly();
                 renderShoppingList();
             }
@@ -678,10 +701,10 @@ async function saveToCloud() {
     isSyncing = true;
     updateSyncStatus('syncing', 'Tallennetaan...');
     try {
-        const response = await fetch(`https://api.npoint.io/${syncId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ items: shoppingList })
+        const serialized = serializeList(shoppingList);
+        // We must encode the value because it is part of the URL path on keyvalue.immanuel.co
+        const response = await fetch(`https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${syncId}/shopping_list/${encodeURIComponent(serialized)}`, {
+            method: 'POST'
         });
         if (!response.ok) throw new Error("Sync save failed");
         updateSyncStatus('active', 'Yhdistetty pilveen');
