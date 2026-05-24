@@ -722,7 +722,11 @@ function updateSyncStatus(status, text) {
         syncIndicator.classList.add(status);
     }
     if (syncStatusText) {
-        syncStatusText.textContent = text;
+        if (status === 'active' && syncId) {
+            syncStatusText.innerHTML = `${text} <span class="sync-code-badge" style="font-size: 0.8rem; background: var(--bg-hover); color: var(--text-color); border: 1px solid var(--border-color); padding: 1px 6px; border-radius: 4px; font-family: monospace; font-weight: 600; margin-left: 6px; letter-spacing: 0.5px;">#${syncId}</span>`;
+        } else {
+            syncStatusText.textContent = text;
+        }
     }
 }
 
