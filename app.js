@@ -103,6 +103,35 @@ try {
     favorites = DEFAULT_FAVORITES;
 }
 
+// ==========================================
+// Item History (for autocomplete suggestions)
+// ==========================================
+const MAX_HISTORY_SIZE = 200;
+let itemHistory = [];
+try {
+    const storedHistory = storage.getItem('shopping_item_history');
+    if (storedHistory) {
+        itemHistory = JSON.parse(storedHistory) || [];
+    } else {
+        // Seed with default favorites on first install
+        itemHistory = DEFAULT_FAVORITES.map(f => f.name);
+    }
+    if (!Array.isArray(itemHistory)) itemHistory = [];
+} catch(e) {
+    itemHistory = DEFAULT_FAVORITES.map(f => f.name);
+}
+
+function addToHistory(name) {
+    const normalized = name.trim();
+    if (!normalized) return;
+    // Move to top if already exists
+    const idx = itemHistory.findIndex(h => h.toLowerCase() === normalized.toLowerCase());
+    if (idx > -1) itemHistory.splice(idx, 1);
+    itemHistory.unshift(normalized);
+    if (itemHistory.length > MAX_HISTORY_SIZE) itemHistory = itemHistory.slice(0, MAX_HISTORY_SIZE);
+    storage.setItem('shopping_item_history', JSON.stringify(itemHistory));
+}
+
 // Cloud Sync State
 const bucketId = 'PUqaJ6qUo9yJGpRJ6YMv9m';
 let syncId = '';
@@ -490,8 +519,11 @@ function addShoppingItem(name, amount = '') {
     name = name.trim();
     if (!name) return;
 
+    // Save to history for autocomplete
+    addToHistory(name);
+
     // Avoid duplicate unchecked items - increment quantity if unchecked
-    const existing = shoppingList.find(item => 
+    const existing = shoppingList.find(item =>
         item.name.toLowerCase() === name.toLowerCase() && !item.bought
     );
 
@@ -592,13 +624,18 @@ function setupShoppingEventListeners() {
     if (addItemForm) {
         addItemForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const name = newItemNameInput.value;
-            addShoppingItem(name);
-            
-            newItemNameInput.value = '';
-            newItemNameInput.focus();
+            const name = newItemNameInput.value.trim();
+            if (name) {
+                addShoppingItem(name);
+                newItemNameInput.value = '';
+                closeAutocomplete();
+                newItemNameInput.focus();
+            }
         });
     }
+
+    // Autocomplete setup
+    setupAutocomplete();
 
     // Clear list button
     if (clearListBtn) {
@@ -651,6 +688,119 @@ function setupShoppingEventListeners() {
 
 function closeSyncModal() {
     if (syncModalOverlay) syncModalOverlay.style.display = 'none';
+}
+
+// ==========================================
+// Autocomplete / Tuotehistoria
+// ==========================================
+let autocompleteActiveIndex = -1;
+const autocompleteDropdown = document.getElementById('autocomplete-suggestions');
+
+function closeAutocomplete() {
+    if (autocompleteDropdown) {
+        autocompleteDropdown.innerHTML = '';
+        autocompleteDropdown.style.display = 'none';
+    }
+    autocompleteActiveIndex = -1;
+}
+
+function setupAutocomplete() {
+    const input = newItemNameInput;
+    const dropdown = autocompleteDropdown;
+    if (!input || !dropdown) return;
+
+    function getSuggestions(query) {
+        if (!query || query.length < 1) return [];
+        const q = query.toLowerCase();
+        return itemHistory
+            .filter(name => name.toLowerCase().includes(q) && name.toLowerCase() !== q)
+            .slice(0, 8);
+    }
+
+    function renderSuggestions(suggestions, query) {
+        if (suggestions.length === 0) { closeAutocomplete(); return; }
+        const q = query.toLowerCase();
+        dropdown.innerHTML = suggestions.map((s, i) => {
+            // Highlight matching substring
+            const lo = s.toLowerCase();
+            const start = lo.indexOf(q);
+            let highlighted = escapeHTML(s);
+            if (start >= 0) {
+                highlighted =
+                    escapeHTML(s.substring(0, start)) +
+                    `<strong>${escapeHTML(s.substring(start, start + q.length))}</strong>` +
+                    escapeHTML(s.substring(start + q.length));
+            }
+            return `<div class="autocomplete-item" role="option" data-value="${escapeHTML(s)}" data-index="${i}">${highlighted}</div>`;
+        }).join('');
+        dropdown.style.display = 'block';
+        autocompleteActiveIndex = -1;
+    }
+
+    function setActiveItem(index) {
+        const items = dropdown.querySelectorAll('.autocomplete-item');
+        items.forEach(el => el.classList.remove('active'));
+        if (index >= 0 && index < items.length) {
+            items[index].classList.add('active');
+            items[index].scrollIntoView({ block: 'nearest' });
+        }
+        autocompleteActiveIndex = index;
+    }
+
+    function selectAndClose(value) {
+        input.value = value;
+        closeAutocomplete();
+        input.focus();
+    }
+
+    // Show suggestions as user types
+    input.addEventListener('input', () => {
+        renderSuggestions(getSuggestions(input.value), input.value);
+    });
+
+    // Keyboard navigation
+    input.addEventListener('keydown', (e) => {
+        if (dropdown.style.display === 'none' || !dropdown.innerHTML) return;
+        const items = dropdown.querySelectorAll('.autocomplete-item');
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setActiveItem(Math.min(autocompleteActiveIndex + 1, items.length - 1));
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setActiveItem(Math.max(autocompleteActiveIndex - 1, -1));
+        } else if (e.key === 'Enter' && autocompleteActiveIndex >= 0 && items[autocompleteActiveIndex]) {
+            e.preventDefault();
+            const val = items[autocompleteActiveIndex].getAttribute('data-value');
+            selectAndClose(val);
+            // Immediately add to list
+            addShoppingItem(val);
+            input.value = '';
+            closeAutocomplete();
+        } else if (e.key === 'Escape') {
+            closeAutocomplete();
+        }
+    });
+
+    // Mouse click on suggestion
+    dropdown.addEventListener('mousedown', (e) => {
+        const item = e.target.closest('.autocomplete-item');
+        if (item) {
+            e.preventDefault(); // prevent blur before click registers
+            selectAndClose(item.getAttribute('data-value'));
+        }
+    });
+
+    // Close on blur (small delay so mousedown click can fire first)
+    input.addEventListener('blur', () => {
+        setTimeout(closeAutocomplete, 160);
+    });
+
+    // Show all history on focus if input is empty
+    input.addEventListener('focus', () => {
+        if (input.value) {
+            renderSuggestions(getSuggestions(input.value), input.value);
+        }
+    });
 }
 
 function showSyncCodeModal() {

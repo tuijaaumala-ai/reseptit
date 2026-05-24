@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="index.css?v=1.1.6">
+    <link rel="stylesheet" href="index.css?v=1.1.7">
 </head>
 <body>
     <!-- Top Navigation Bar -->
@@ -140,6 +140,7 @@
                     <div class="form-row">
                         <div class="input-wrapper name-wrapper">
                             <input type="text" id="new-item-name" placeholder="Mitä ostetaan? (esim. Maito)" required autocomplete="off">
+                            <div id="autocomplete-suggestions" class="autocomplete-dropdown" role="listbox"></div>
                         </div>
                         <button type="submit" class="add-btn">➕ Lisää listalle</button>
                     </div>
@@ -176,8 +177,8 @@
     </div>
 
     <!-- Load compiled recipe database -->
-    <script src="recipes.js?v=1.1.6"></script>
+    <script src="recipes.js?v=1.1.7"></script>
     <!-- Load main application logic -->
-    <script src="app.js?v=1.1.6"></script>
+    <script src="app.js?v=1.1.7"></script>
 </body>
 </html>
