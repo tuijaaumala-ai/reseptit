@@ -46,7 +46,15 @@ let recipes = window.RECIPES || [];
 let activeRecipeId = null;
 
 // Shopping List & Favorites State
-let shoppingList = JSON.parse(localStorage.getItem('shopping_list_items')) || [];
+let shoppingList = [];
+try {
+    shoppingList = JSON.parse(localStorage.getItem('shopping_list_items')) || [];
+    if (!Array.isArray(shoppingList)) shoppingList = [];
+} catch (e) {
+    console.error("Failed to parse shopping list items:", e);
+    shoppingList = [];
+}
+
 const DEFAULT_FAVORITES = [
     { name: "Maito", favorite: true },
     { name: "Leipä", favorite: true },
@@ -57,7 +65,17 @@ const DEFAULT_FAVORITES = [
     { name: "Banaanit", favorite: true },
     { name: "Omenat", favorite: true }
 ];
-let favorites = JSON.parse(localStorage.getItem('shopping_list_favorites')) || DEFAULT_FAVORITES;
+
+let favorites = DEFAULT_FAVORITES;
+try {
+    const storedFavs = localStorage.getItem('shopping_list_favorites');
+    if (storedFavs) {
+        favorites = JSON.parse(storedFavs) || DEFAULT_FAVORITES;
+    }
+} catch (e) {
+    console.error("Failed to parse shopping list favorites:", e);
+    favorites = DEFAULT_FAVORITES;
+}
 
 // Cloud Sync State
 let syncId = localStorage.getItem('shopping_list_id') || '';
@@ -647,4 +665,9 @@ function escapeHTML(str) {
         .replace(/'/g, '&#039;');
 }
 
-document.addEventListener('DOMContentLoaded', init);
+// Start application safely handling DOMContentLoaded race conditions
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
