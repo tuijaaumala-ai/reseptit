@@ -368,7 +368,7 @@ function renderFavorites() {
                 toggleFavorite(fav.name);
                 return;
             }
-            addShoppingItem(fav.name, '1 kpl');
+            addShoppingItem(fav.name);
             
             // Small click scale dynamic micro-animation
             chip.style.transform = 'scale(0.95)';
@@ -393,7 +393,7 @@ function renderShoppingList() {
     // Sort logic based on Shopping Mode (Ostosmoodi)
     // If Shopping Mode is checked: move checked/bought items to the bottom of the list
     let sortedList = [...shoppingList];
-    if (shoppingModeCheckbox.checked) {
+    if (shoppingModeCheckbox && shoppingModeCheckbox.checked) {
         sortedList.sort((a, b) => {
             if (a.bought && !b.bought) return 1;
             if (!a.bought && b.bought) return -1;
@@ -402,10 +402,10 @@ function renderShoppingList() {
     }
 
     if (sortedList.length === 0) {
-        shoppingEmptyEl.style.display = 'flex';
+        if (shoppingEmptyEl) shoppingEmptyEl.style.display = 'flex';
         return;
     } else {
-        shoppingEmptyEl.style.display = 'none';
+        if (shoppingEmptyEl) shoppingEmptyEl.style.display = 'none';
     }
 
     sortedList.forEach(item => {
@@ -414,16 +414,21 @@ function renderShoppingList() {
         if (item.bought) li.classList.add('bought');
         
         const isFav = favorites.some(fav => fav.name.toLowerCase() === item.name.toLowerCase());
+        const quantity = item.quantity || 1;
         
         li.innerHTML = `
             <div class="shopping-item-left">
                 <input type="checkbox" id="shop-item-${item.id}" ${item.bought ? 'checked' : ''}>
                 <label for="shop-item-${item.id}">
-                    ${item.amount ? `<span class="amount">${escapeHTML(item.amount)}</span>` : ''}
                     <span class="name">${escapeHTML(item.name)}</span>
                 </label>
             </div>
             <div class="shopping-item-actions">
+                <div class="stepper">
+                    <button class="stepper-btn dec-btn" title="Vähennä">-</button>
+                    <span class="stepper-val">${quantity}</span>
+                    <button class="stepper-btn inc-btn" title="Lisää">+</button>
+                </div>
                 <button class="fav-heart-btn ${isFav ? 'active' : ''}" title="${isFav ? 'Poista suosikeista' : 'Lisää suosikkeihin'}">
                     ${isFav ? '❤️' : '🤍'}
                 </button>
@@ -433,47 +438,58 @@ function renderShoppingList() {
 
         // Checkbox bought toggle
         const checkbox = li.querySelector('input[type="checkbox"]');
-        checkbox.addEventListener('change', () => toggleBought(item.id));
+        if (checkbox) checkbox.addEventListener('change', () => toggleBought(item.id));
+
+        // Stepper buttons
+        const decBtn = li.querySelector('.dec-btn');
+        if (decBtn) decBtn.addEventListener('click', () => changeQuantity(item.id, -1));
+
+        const incBtn = li.querySelector('.inc-btn');
+        if (incBtn) incBtn.addEventListener('click', () => changeQuantity(item.id, 1));
 
         // Favorite Toggle
         const heartBtn = li.querySelector('.fav-heart-btn');
-        heartBtn.addEventListener('click', () => toggleFavorite(item.name));
+        if (heartBtn) heartBtn.addEventListener('click', () => toggleFavorite(item.name));
 
         // Delete Button
         const delBtn = li.querySelector('.delete-item-btn');
-        delBtn.addEventListener('click', () => deleteShoppingItem(item.id));
+        if (delBtn) delBtn.addEventListener('click', () => deleteShoppingItem(item.id));
 
         shoppingListItemsContainer.appendChild(li);
     });
 }
 
 // Shopping list operations
-function addShoppingItem(name, amount) {
+function addShoppingItem(name, amount = '') {
     name = name.trim();
-    amount = amount ? amount.trim() : '';
     if (!name) return;
 
-    // Avoid duplicate unchecked items - merge quantity if unchecked
-    const existingIndex = shoppingList.findIndex(item => 
+    // Avoid duplicate unchecked items - increment quantity if unchecked
+    const existing = shoppingList.find(item => 
         item.name.toLowerCase() === name.toLowerCase() && !item.bought
     );
 
-    if (existingIndex > -1) {
-        // If amount was provided, we append it, otherwise keep existing
-        if (amount) {
-            shoppingList[existingIndex].amount = amount;
-        }
+    if (existing) {
+        existing.quantity = (existing.quantity || 1) + 1;
     } else {
         const newItem = {
             id: Date.now().toString() + Math.random().toString(36).substring(2, 6),
             name: name,
-            amount: amount,
+            quantity: 1,
             bought: false
         };
         shoppingList.unshift(newItem); // add to beginning
     }
 
     saveAndSync();
+}
+
+function changeQuantity(itemId, delta) {
+    const item = shoppingList.find(i => i.id === itemId);
+    if (item) {
+        item.quantity = Math.max(1, (item.quantity || 1) + delta);
+        saveAndSync();
+    }
 }
 
 function toggleBought(itemId) {
@@ -538,11 +554,9 @@ function setupShoppingEventListeners() {
         addItemForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const name = newItemNameInput.value;
-            const amount = newItemAmountInput.value;
-            addShoppingItem(name, amount);
+            addShoppingItem(name);
             
             newItemNameInput.value = '';
-            newItemAmountInput.value = '';
             newItemNameInput.focus();
         });
     }
