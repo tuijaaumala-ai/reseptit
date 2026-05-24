@@ -99,6 +99,7 @@ try {
 }
 
 // Cloud Sync State
+const bucketId = 'PUqaJ6qUo9yJGpRJ6YMv9m';
 let syncId = '';
 try {
     syncId = storage.getItem('shopping_list_id') || '';
@@ -609,28 +610,9 @@ function setupShoppingEventListeners() {
 }
 }
 
-// Compact serialization format for keyvalue.immanuel.co 1024-character URL path value limit
-function serializeList(list) {
-    return list.map(item => {
-        const id = item.id ? item.id.substring(0, 6) : Math.random().toString(36).substring(2, 8);
-        const name = item.name ? encodeURIComponent(item.name.replace(/[_;]/g, ' ')) : '';
-        const qty = item.quantity || 1;
-        const bought = item.bought ? 1 : 0;
-        return `${id}_${name}_${qty}_${bought}`;
-    }).join(';');
-}
-
-function deserializeList(str) {
-    if (!str) return [];
-    return str.split(';').filter(Boolean).map(part => {
-        const [id, name, qty, bought] = part.split('_');
-        return {
-            id: id || Date.now().toString() + Math.random().toString(36).substring(2, 4),
-            name: name ? decodeURIComponent(name) : '',
-            quantity: parseInt(qty, 10) || 1,
-            bought: bought === '1'
-        };
-    });
+// Generation of a clean, short unique perheavain if not sharing
+function generateUniqueKey() {
+    return Math.random().toString(36).substring(2, 10);
 }
 
 async function initSync() {
@@ -648,18 +630,11 @@ async function initSync() {
     if (!syncId) {
         updateSyncStatus('syncing', 'Luodaan pilvilistaa...');
         try {
-            // Get a free keyvalue.immanuel.co App Key via CORS proxy
-            const response = await fetch('https://corsproxy.io/?url=' + encodeURIComponent('https://keyvalue.immanuel.co/api/KeyVal/GetAppKey'));
-            if (!response.ok) throw new Error('Failed to get app key');
-            const appKey = await response.json(); // returns the 8-digit app key string
-            if (appKey) {
-                syncId = appKey;
-                storage.setItem('shopping_list_id', syncId);
-                updateSyncStatus('active', 'Yhdistetty pilveen');
-                await saveToCloud();
-            } else {
-                throw new Error('Sync creation failed');
-            }
+            // Generate a random unique perheavain and save current items immediately to kvdb.io
+            syncId = generateUniqueKey();
+            storage.setItem('shopping_list_id', syncId);
+            updateSyncStatus('active', 'Yhdistetty pilveen');
+            await saveToCloud();
         } catch (e) {
             console.error("Failed to create shared list:", e);
             updateSyncStatus('error', 'Vain paikallinen tila ( offline )');
@@ -676,15 +651,18 @@ async function initSync() {
 async function loadFromCloud() {
     if (!syncId || isSyncing) return;
     try {
-        const response = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(`https://keyvalue.immanuel.co/api/KeyVal/GetValue/${syncId}/shopping_list`));
+        const response = await fetch(`https://kvdb.io/${bucketId}/${syncId}`);
+        if (response.status === 404) {
+            // Key doesn't exist on the cloud yet (which is fine, e.g. newly generated key)
+            return;
+        }
         if (!response.ok) throw new Error("Sync load failed");
         
-        const dataStr = await response.json(); // Returns the string value
-        if (dataStr && dataStr !== "null") {
-            const items = deserializeList(dataStr);
+        const data = await response.json(); // Natively parses the full JSON array
+        if (data && Array.isArray(data)) {
             // Check if lists are actually different to prevent redraw loops
-            if (JSON.stringify(shoppingList) !== JSON.stringify(items)) {
-                shoppingList = items;
+            if (JSON.stringify(shoppingList) !== JSON.stringify(data)) {
+                shoppingList = data;
                 saveLocallyOnly();
                 renderShoppingList();
             }
@@ -701,10 +679,10 @@ async function saveToCloud() {
     isSyncing = true;
     updateSyncStatus('syncing', 'Tallennetaan...');
     try {
-        const serialized = serializeList(shoppingList);
-        // We must encode the value because it is part of the URL path on keyvalue.immanuel.co
-        const response = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(`https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${syncId}/shopping_list/${encodeURIComponent(serialized)}`), {
-            method: 'POST'
+        // Post the raw JSON string directly to kvdb.io (supported naturally with CORS)
+        const response = await fetch(`https://kvdb.io/${bucketId}/${syncId}`, {
+            method: 'POST',
+            body: JSON.stringify(shoppingList)
         });
         if (!response.ok) throw new Error("Sync save failed");
         updateSyncStatus('active', 'Yhdistetty pilveen');
