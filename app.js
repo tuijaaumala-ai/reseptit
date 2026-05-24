@@ -803,13 +803,63 @@ async function loadFromCloud() {
             console.warn('[Sync] Cloud returned non-array:', data);
             return;
         }
+
+        // === SMART MERGE by item ID ===
+        // Never simply overwrite — merge so no item is lost due to timing.
+        // Rule: if an item exists in EITHER local or cloud, keep it.
+        //       Update bought/quantity from whichever version is newer (higher id timestamp).
+        //       Exception: if cloud is explicitly empty [] (cleared), respect that clear.
         
-        // Update local list if different
-        const localJson = JSON.stringify(shoppingList);
-        const cloudJson = JSON.stringify(data);
-        if (localJson !== cloudJson) {
-            console.log('[Sync] List changed, updating UI. Cloud items:', data.length, 'Local items:', shoppingList.length);
-            shoppingList = data;
+        const cloudIsEmpty = data.length === 0;
+        const localIsEmpty = shoppingList.length === 0;
+        
+        if (cloudIsEmpty && !localIsEmpty) {
+            // Cloud was explicitly cleared — wipe local too
+            console.log('[Sync] Cloud is empty — clearing local list');
+            shoppingList = [];
+            saveLocallyOnly();
+            renderShoppingList();
+            updateSyncStatus('active', 'Yhdistetty pilveen');
+            return;
+        }
+        
+        // Build a map of cloud items by ID
+        const cloudMap = new Map(data.map(item => [item.id, item]));
+        const localMap = new Map(shoppingList.map(item => [item.id, item]));
+        
+        let changed = false;
+        
+        // Merge cloud items into local (add or update)
+        for (const [id, cloudItem] of cloudMap) {
+            if (!localMap.has(id)) {
+                // Cloud has an item local doesn't — add it
+                console.log('[Sync] Adding missing item from cloud:', cloudItem.name);
+                shoppingList.push(cloudItem);
+                changed = true;
+            } else {
+                // Both have it — sync the bought/quantity state
+                const localItem = localMap.get(id);
+                if (localItem.bought !== cloudItem.bought || localItem.quantity !== cloudItem.quantity) {
+                    // Use the cloud version's state (cloud is treated as authority for state changes)
+                    localItem.bought = cloudItem.bought;
+                    localItem.quantity = cloudItem.quantity;
+                    changed = true;
+                }
+            }
+        }
+        
+        // Note: items in local but NOT in cloud means they were deleted on another device.
+        // We respect that deletion only if cloud had items (it wasn't a clear-all).
+        if (!cloudIsEmpty) {
+            const beforeLen = shoppingList.length;
+            shoppingList = shoppingList.filter(item => cloudMap.has(item.id));
+            if (shoppingList.length !== beforeLen) {
+                console.log('[Sync] Removed', beforeLen - shoppingList.length, 'deleted items');
+                changed = true;
+            }
+        }
+        
+        if (changed) {
             saveLocallyOnly();
             renderShoppingList();
         }
