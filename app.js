@@ -1012,8 +1012,11 @@ async function initSync() {
         await loadFromCloud();
     }
     
-    // Background polling every 5 seconds
-    setInterval(loadFromCloud, 5000);
+    // Background polling every 10 seconds, but only if the tab is active/visible to save requests
+    setInterval(() => {
+        if (document.hidden) return;
+        loadFromCloud();
+    }, 10000);
 }
 
 async function loadFromCloud() {
@@ -1110,7 +1113,11 @@ async function loadFromCloud() {
         updateSyncStatus('active', 'Yhdistetty pilveen');
     } catch (e) {
         console.error("Sync load failed:", e);
-        updateSyncStatus('error', 'Yhteysvirhe');
+        if (e.message && e.message.includes("429")) {
+            updateSyncStatus('syncing', 'Päivitetään pian...');
+        } else {
+            updateSyncStatus('error', 'Yhteysvirhe');
+        }
     }
 }
 
