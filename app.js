@@ -33,13 +33,14 @@ const joinSyncBtn = document.getElementById('join-sync-btn');
 const syncModalOverlay = document.getElementById('sync-modal-overlay');
 const syncModalContent = document.getElementById('sync-modal-content');
 const syncModalClose = document.getElementById('sync-modal-close');
+const exitWidgetBtn = document.getElementById('exit-widget-btn');
 
 const favoritesGrid = document.getElementById('favorites-grid');
 const addItemForm = document.getElementById('add-item-form');
 const newItemNameInput = document.getElementById('new-item-name');
 const newItemAmountInput = document.getElementById('new-item-amount');
 
-const shoppingModeCheckbox = document.getElementById('shopping-mode-checkbox');
+const goToWidgetBtn = document.getElementById('go-to-widget-btn');
 const clearListBtn = document.getElementById('clear-list-btn');
 const shoppingListItemsContainer = document.getElementById('shopping-list-items');
 const shoppingEmptyEl = document.getElementById('shopping-empty');
@@ -456,7 +457,7 @@ function renderShoppingList() {
     // If Shopping Mode is checked: move checked/bought items to the bottom of the list
     let sortedList = [...shoppingList];
     const isWidgetMode = document.body.classList.contains('widget-mode');
-    if ((shoppingModeCheckbox && shoppingModeCheckbox.checked) || isWidgetMode) {
+    if (isWidgetMode) {
         sortedList.sort((a, b) => {
             if (a.bought && !b.bought) return 1;
             if (!a.bought && b.bought) return -1;
@@ -478,7 +479,7 @@ function renderShoppingList() {
         
         const isFav = favorites.some(fav => fav.name.toLowerCase() === item.name.toLowerCase());
         const quantity = item.quantity || 1;
-        const isShoppingMode = (shoppingModeCheckbox && shoppingModeCheckbox.checked) || isWidgetMode;
+        const isShoppingMode = isWidgetMode;
 
         const leftHTML = `
             <span class="name">${escapeHTML(item.name)}</span>
@@ -671,10 +672,11 @@ function setupShoppingEventListeners() {
         clearListBtn.addEventListener('click', clearList);
     }
 
-    // Shopping Mode checkbox toggling (resorts list on transition)
-    if (shoppingModeCheckbox) {
-        shoppingModeCheckbox.addEventListener('change', () => {
-            renderShoppingList();
+    // Go to widget mode button (Ostosmoodi)
+    if (goToWidgetBtn) {
+        goToWidgetBtn.addEventListener('click', () => {
+            const widgetUrl = window.location.origin + window.location.pathname + '?list=' + syncId + '&widget=true';
+            window.location.href = widgetUrl;
         });
     }
 
@@ -711,6 +713,15 @@ function setupShoppingEventListeners() {
     if (syncModalOverlay) {
         syncModalOverlay.addEventListener('click', (e) => {
             if (e.target === syncModalOverlay) closeSyncModal();
+        });
+    }
+
+    // Exit widget mode button
+    if (exitWidgetBtn) {
+        exitWidgetBtn.addEventListener('click', () => {
+            // Return to the main app by removing widget from query parameters, but keeping the shared list ID
+            const newUrl = window.location.origin + window.location.pathname + (syncId ? '?list=' + syncId : '');
+            window.location.href = newUrl;
         });
     }
 }

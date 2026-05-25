@@ -830,17 +830,31 @@ body {
     gap: 0.75rem;
 }
 
-.shopping-mode-toggle {
-    display: flex;
+.go-to-widget-btn {
+    background-color: var(--primary-light);
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    padding: 0.5rem 1.1rem;
+    border-radius: 10px;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-speed);
+    display: inline-flex;
     align-items: center;
-    gap: 0.65rem;
-    font-size: 0.9rem;
-    color: var(--text-main);
-    user-select: none;
+    gap: 0.4rem;
 }
 
-.toggle-label {
-    font-weight: 500;
+.go-to-widget-btn:hover {
+    background-color: var(--primary);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-active);
+}
+
+.go-to-widget-btn:active {
+    transform: translateY(0);
 }
 
 .clear-list-btn {
@@ -1379,4 +1393,39 @@ body.widget-mode .shopping-list-wrapper {
     border: none !important;
     padding: 0 !important;
     min-height: auto !important;
+}
+
+/* Exit Widget Button */
+.exit-widget-btn {
+    display: none;
+}
+
+body.widget-mode .exit-widget-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    padding: 0.45rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-speed);
+    margin-top: 0.5rem;
+    box-shadow: var(--shadow-main);
+    text-decoration: none;
+}
+
+body.widget-mode .exit-widget-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background-color: var(--primary-light);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-active);
+}
+
+body.widget-mode .exit-widget-btn:active {
+    transform: translateY(0);
 }

@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="index.css?v=1.1.12">
+    <link rel="stylesheet" href="index.css?v=1.1.13">
 </head>
 <body>
     <!-- Top Navigation Bar -->
@@ -103,6 +103,7 @@
                 <div class="shopping-title-group">
                     <h2>Perheen Ostoslista</h2>
                     <p class="shopping-subtitle">Reaaliaikainen synkronointi käytössä</p>
+                    <button id="exit-widget-btn" class="exit-widget-btn">🍳 Palaa pääsovellukseen</button>
                 </div>
                 <div class="sync-controls">
                     <div class="sync-status">
@@ -150,13 +151,7 @@
             <!-- Shopping List Content -->
             <section class="shopping-body">
                 <div class="shopping-actions">
-                    <div class="shopping-mode-toggle">
-                        <label class="switch">
-                            <input type="checkbox" id="shopping-mode-checkbox" checked>
-                            <span class="slider round"></span>
-                        </label>
-                        <span class="toggle-label">Ostosmoodi (yliviivaa ostetut)</span>
-                    </div>
+                    <button id="go-to-widget-btn" class="go-to-widget-btn">🛒 Ostosmoodi</button>
                     <button id="clear-list-btn" class="clear-list-btn">🗑️ Tyhjennä lista</button>
                 </div>
 
@@ -177,8 +172,8 @@
     </div>
 
     <!-- Load compiled recipe database -->
-    <script src="recipes.js?v=1.1.12"></script>
+    <script src="recipes.js?v=1.1.13"></script>
     <!-- Load main application logic -->
-    <script src="app.js?v=1.1.12"></script>
+    <script src="app.js?v=1.1.13"></script>
 </body>
 </html>
