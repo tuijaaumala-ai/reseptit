@@ -132,7 +132,14 @@ function addToHistory(name) {
 }
 
 // Cloud Sync State
-const bucketId = 'UGjedjQK4kV8YmnNoJn49G';
+// Use your private bucket ID only when running on your domain or locally, fallback to the public bucket for anyone else.
+const bucketId = (
+    window.location.hostname.includes('tuijaaumala-ai.github.io') || 
+    window.location.hostname === 'localhost' || 
+    window.location.hostname === '127.0.0.1' ||
+    window.location.protocol === 'file:'
+) ? 'UGjedjQK4kV8YmnNoJn49G' : 'PUqaJ6qUo9yJGpRJ6YMv9m';
+
 let syncId = '';
 
 // IMPORTANT: Read ?list= param IMMEDIATELY before any code can wipe the URL
