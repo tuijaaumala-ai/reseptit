@@ -153,7 +153,8 @@ const bucketId = (
     window.location.hostname.includes('tuijaaumala-ai.github.io') || 
     window.location.hostname === 'localhost' || 
     window.location.hostname === '127.0.0.1' ||
-    window.location.protocol === 'file:'
+    window.location.protocol === 'file:' ||
+    /^(192\.168\.|10\.|172\.)/.test(window.location.hostname) // Allow local network IPs
 ) ? 'UGjedjQK4kV8YmnNoJn49G' : 'PUqaJ6qUo9yJGpRJ6YMv9m';
 
 let syncId = '';
@@ -1321,6 +1322,11 @@ async function loadFromCloud() {
         const response = await fetch(`https://kvdb.io/${bucketId}/${syncId}?t=${Date.now()}`);
         if (response.status === 404) {
             updateSyncStatus('active', 'Yhdistetty pilveen');
+            // If the cloud database key doesn't exist yet but we have local items, upload them immediately so other devices can sync!
+            if (shoppingList && shoppingList.length > 0) {
+                console.log('[Sync] Cloud list is empty (404), seeding with our local items...');
+                saveToCloud();
+            }
             return;
         }
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
