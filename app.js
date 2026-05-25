@@ -1300,6 +1300,14 @@ async function initSync() {
         if (document.hidden) return;
         loadFromCloud();
     }, 10000);
+
+    // Instant sync when phone is unlocked or tab becomes visible again
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            console.log('[Sync] Tab became visible — triggering immediate cloud sync');
+            loadFromCloud();
+        }
+    });
 }
 
 async function loadFromCloud() {
