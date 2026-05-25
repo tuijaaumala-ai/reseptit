@@ -132,7 +132,7 @@ function addToHistory(name) {
 }
 
 // Cloud Sync State
-const bucketId = 'PUqaJ6qUo9yJGpRJ6YMv9m';
+const bucketId = 'UGjedjQK4kV8YmnNoJn49G';
 let syncId = '';
 
 // IMPORTANT: Read ?list= param IMMEDIATELY before any code can wipe the URL
