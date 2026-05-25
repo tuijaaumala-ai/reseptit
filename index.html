@@ -40,8 +40,9 @@
                         <input type="text" id="search-input" placeholder="Hae reseptiä tai ainesosaa..." autocomplete="off">
                         <button id="clear-search" class="clear-btn" title="Tyhjennä haku" style="display: none;">✕</button>
                     </div>
-                    <div class="stats-counter">
-                        Löydetty <strong id="recipes-count">0</strong> reseptiä
+                    <div class="stats-counter" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <span>Löydetty <strong id="recipes-count">0</strong> reseptiä</span>
+                        <button id="add-recipe-btn" class="add-recipe-btn" title="Lisää uusi resepti">➕ Uusi resepti</button>
                     </div>
                 </header>
                 <nav class="recipe-list" id="recipe-list" aria-label="Reseptiluettelo">
@@ -63,9 +64,12 @@
                 <!-- Recipe Detail View -->
                 <article class="recipe-detail" id="recipe-detail" style="display: none;">
                     <header class="recipe-header">
-                        <button class="back-btn" id="back-btn" aria-label="Takaisin reseptilistaan">
-                            <span class="back-arrow">←</span> Takaisin listaan
-                        </button>
+                        <div class="recipe-header-actions" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <button class="back-btn" id="back-btn" aria-label="Takaisin reseptilistaan">
+                                <span class="back-arrow">←</span> Takaisin listaan
+                            </button>
+                            <button id="delete-recipe-btn" class="delete-recipe-btn" style="display: none;" title="Poista tämä itse luotu resepti">🗑️ Poista resepti</button>
+                        </div>
                         <div class="recipe-header-content">
                             <h2 id="recipe-title" class="recipe-title"></h2>
                             <div id="recipe-desc" class="recipe-desc"></div>
@@ -168,6 +172,39 @@
                     </div>
                 </div>
             </section>
+        </div>
+    </div>
+
+    <!-- Add Recipe Modal Overlay -->
+    <div id="recipe-modal-overlay" class="sync-modal-overlay" style="display:none;">
+        <div class="sync-modal" style="max-width: 500px; width: 100%;">
+            <button id="recipe-modal-close" class="sync-modal-close">✕</button>
+            <h3 style="font-family: var(--font-serif); font-size: 1.4rem; color: var(--text-title); margin-bottom: 1rem;">Lisää uusi resepti</h3>
+            <form id="add-recipe-form" style="display: flex; flex-direction: column; gap: 1rem; max-height: 70vh; overflow-y: auto; padding-right: 0.5rem;">
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 0.35rem;">
+                    <label for="recipe-title-input" style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">Reseptin nimi *</label>
+                    <input type="text" id="recipe-title-input" required placeholder="esim. Mummon mustikkapiirakka" style="padding: 0.65rem 0.85rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-app); color: var(--text-title); font-family: var(--font-sans); outline: none;">
+                </div>
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 0.35rem;">
+                    <label for="recipe-desc-input" style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">Lyhyt kuvaus</label>
+                    <textarea id="recipe-desc-input" placeholder="esim. Helppo ja perinteinen piirakka, johon sopivat myös pakastemustikat." style="padding: 0.65rem 0.85rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-app); color: var(--text-title); font-family: var(--font-sans); outline: none; resize: vertical; min-height: 50px;"></textarea>
+                </div>
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 0.35rem;">
+                    <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">Ainekset</label>
+                    <div id="recipe-ingredients-rows" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <!-- dynamic rows will be added here -->
+                    </div>
+                    <button type="button" id="add-ingredient-row-btn" class="share-btn" style="width: 100%; justify-content: center; margin-top: 0.25rem;">➕ Lisää ainesosarivi</button>
+                </div>
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 0.35rem;">
+                    <label for="recipe-instr-input" style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">Valmistusohjeet (kirjoita jokainen vaihe omalle riveilleen)</label>
+                    <textarea id="recipe-instr-input" placeholder="1. Sekoita kuivat aineet keskenään.&#10;2. Sulata voi ja lisää se maidon kanssa taikinaan.&#10;3. Kaada vuokaan ja paista 200 asteessa 25-30 minuuttia." style="padding: 0.65rem 0.85rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-app); color: var(--text-title); font-family: var(--font-sans); outline: none; resize: vertical; min-height: 90px; line-height: 1.5;"></textarea>
+                </div>
+                <div class="form-actions" style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
+                    <button type="button" id="recipe-modal-cancel" class="clear-list-btn" style="flex: 1; padding: 0.65rem; margin-top: 0;">Peruuta</button>
+                    <button type="submit" class="add-btn" style="flex: 1.5; padding: 0.65rem;">💾 Tallenna resepti</button>
+                </div>
+            </form>
         </div>
     </div>
 

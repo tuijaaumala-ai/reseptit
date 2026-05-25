@@ -1429,3 +1429,112 @@ body.widget-mode .exit-widget-btn:hover {
 body.widget-mode .exit-widget-btn:active {
     transform: translateY(0);
 }
+
+/* Add Recipe Button (Sidebar Header) */
+.add-recipe-btn {
+    background-color: var(--primary-light);
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    padding: 0.35rem 0.65rem;
+    border-radius: 8px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-speed);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.add-recipe-btn:hover {
+    background-color: var(--primary);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-active);
+}
+
+.add-recipe-btn:active {
+    transform: translateY(0);
+}
+
+/* Delete Recipe Button (Details View) */
+.delete-recipe-btn {
+    background-color: rgba(239, 68, 68, 0.05);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-speed);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.delete-recipe-btn:hover {
+    border-color: #ef4444;
+    background-color: rgba(239, 68, 68, 0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+}
+
+.delete-recipe-btn:active {
+    transform: translateY(0);
+}
+
+/* Ingredient Creation Row */
+.ingredient-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    width: 100%;
+    animation: fadeIn 0.2s ease;
+}
+
+.ingredient-row input {
+    padding: 0.65rem 0.85rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-app);
+    color: var(--text-title);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color var(--transition-speed);
+}
+
+.ingredient-row input:focus {
+    border-color: var(--primary);
+}
+
+.ingredient-row input.ing-amount {
+    flex: 1;
+    min-width: 60px;
+}
+
+.ingredient-row input.ing-name {
+    flex: 2.5;
+}
+
+.ingredient-row .remove-ing-row-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0.4rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-speed);
+}
+
+.ingredient-row .remove-ing-row-btn:hover {
+    color: #ef4444;
+    background-color: rgba(239, 68, 68, 0.08);
+}

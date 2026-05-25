@@ -46,6 +46,21 @@ const shoppingListItemsContainer = document.getElementById('shopping-list-items'
 const shoppingEmptyEl = document.getElementById('shopping-empty');
 
 // ==========================================
+// DOM Elements - Recipe Creation
+// ==========================================
+const addRecipeBtn = document.getElementById('add-recipe-btn');
+const deleteRecipeBtn = document.getElementById('delete-recipe-btn');
+const recipeModalOverlay = document.getElementById('recipe-modal-overlay');
+const recipeModalClose = document.getElementById('recipe-modal-close');
+const recipeModalCancel = document.getElementById('recipe-modal-cancel');
+const addRecipeForm = document.getElementById('add-recipe-form');
+const recipeTitleInput = document.getElementById('recipe-title-input');
+const recipeDescInput = document.getElementById('recipe-desc-input');
+const recipeIngredientsRows = document.getElementById('recipe-ingredients-rows');
+const addIngredientRowBtn = document.getElementById('add-ingredient-row-btn');
+const recipeInstrInput = document.getElementById('recipe-instr-input');
+
+// ==========================================
 // Application State
 // ==========================================
 let recipes = window.RECIPES || [];
@@ -170,6 +185,19 @@ let hasPendingChanges = false; // true while local changes not yet saved to clou
 // Initialization
 // ==========================================
 function init() {
+    // Load custom recipes from localStorage and merge with static recipes database
+    try {
+        const storedCustom = storage.getItem('recipes_custom');
+        if (storedCustom) {
+            const customRecipes = JSON.parse(storedCustom) || [];
+            if (Array.isArray(customRecipes)) {
+                recipes = [...customRecipes, ...recipes];
+            }
+        }
+    } catch (e) {
+        console.error("Failed to load custom recipes:", e);
+    }
+
     setupNavigation();
     renderRecipeList(recipes);
     setupRecipeEventListeners();
@@ -343,6 +371,15 @@ function selectRecipe(recipeId) {
         recipeInstructionsEl.innerHTML = '<p style="color: var(--text-muted); font-style: italic;">Ei ohjeita kirjoitettuna.</p>';
     }
 
+    // Show/hide delete button for custom recipes
+    if (deleteRecipeBtn) {
+        if (recipeId.startsWith('custom-')) {
+            deleteRecipeBtn.style.display = 'inline-flex';
+        } else {
+            deleteRecipeBtn.style.display = 'none';
+        }
+    }
+
     emptyStateEl.style.display = 'none';
     recipeDetailEl.style.display = 'flex';
     mainContentContainer.scrollTop = 0;
@@ -372,10 +409,51 @@ function setupRecipeEventListeners() {
     });
 
     window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && document.querySelector('.app-container').classList.contains('recipe-active')) {
-            backBtn.click();
+        if (e.key === 'Escape') {
+            if (recipeModalOverlay && recipeModalOverlay.style.display === 'flex') {
+                closeRecipeModal();
+            } else if (document.querySelector('.app-container').classList.contains('recipe-active')) {
+                backBtn.click();
+            }
         }
     });
+
+    // Open recipe creation modal
+    if (addRecipeBtn) {
+        addRecipeBtn.addEventListener('click', openRecipeModal);
+    }
+    
+    // Close modal
+    if (recipeModalClose) {
+        recipeModalClose.addEventListener('click', closeRecipeModal);
+    }
+    if (recipeModalCancel) {
+        recipeModalCancel.addEventListener('click', closeRecipeModal);
+    }
+    if (recipeModalOverlay) {
+        recipeModalOverlay.addEventListener('click', (e) => {
+            if (e.target === recipeModalOverlay) closeRecipeModal();
+        });
+    }
+    
+    // Dynamic ingredients row addition
+    if (addIngredientRowBtn) {
+        addIngredientRowBtn.addEventListener('click', () => addIngredientRow('', ''));
+    }
+    
+    // Form submit saving
+    if (addRecipeForm) {
+        addRecipeForm.addEventListener('submit', saveCustomRecipe);
+    }
+    
+    // Delete recipe button in detail view
+    if (deleteRecipeBtn) {
+        deleteRecipeBtn.addEventListener('click', () => {
+            if (activeRecipeId) {
+                deleteCustomRecipe(activeRecipeId);
+            }
+        });
+    }
 }
 
 function handleSearch(e) {
@@ -848,6 +926,162 @@ function setupAutocomplete() {
             renderSuggestions(getSuggestions(input.value), input.value);
         }
     });
+}
+
+// ==========================================
+// 🍳 Recipe Creation Modal Logic
+// ==========================================
+function openRecipeModal() {
+    if (!recipeModalOverlay) return;
+    
+    // Clear form inputs
+    if (recipeTitleInput) recipeTitleInput.value = '';
+    if (recipeDescInput) recipeDescInput.value = '';
+    if (recipeInstrInput) recipeInstrInput.value = '';
+    if (recipeIngredientsRows) recipeIngredientsRows.innerHTML = '';
+    
+    // Add 3 default empty ingredient rows
+    addIngredientRow('', '');
+    addIngredientRow('', '');
+    addIngredientRow('', '');
+    
+    recipeModalOverlay.style.display = 'flex';
+    if (recipeTitleInput) recipeTitleInput.focus();
+}
+
+function closeRecipeModal() {
+    if (recipeModalOverlay) recipeModalOverlay.style.display = 'none';
+}
+
+function addIngredientRow(amount = '', name = '') {
+    if (!recipeIngredientsRows) return;
+    
+    const row = document.createElement('div');
+    row.className = 'ingredient-row';
+    
+    row.innerHTML = `
+        <input type="text" class="ing-amount" placeholder="Määrä (esim. 2 dl)" value="${escapeHTML(amount)}" autocomplete="off">
+        <input type="text" class="ing-name" placeholder="Ainesosa (esim. Vehnäjauhoja)" value="${escapeHTML(name)}" autocomplete="off" required>
+        <button type="button" class="remove-ing-row-btn" title="Poista ainesosarivi">✕</button>
+    `;
+    
+    // Wire up delete button for this row
+    const deleteBtn = row.querySelector('.remove-ing-row-btn');
+    deleteBtn.addEventListener('click', () => {
+        row.remove();
+        // Always ensure there is at least one row left
+        if (recipeIngredientsRows.children.length === 0) {
+            addIngredientRow('', '');
+        }
+    });
+    
+    recipeIngredientsRows.appendChild(row);
+}
+
+function saveCustomRecipe(e) {
+    if (e) e.preventDefault();
+    
+    const title = recipeTitleInput ? recipeTitleInput.value.trim() : '';
+    if (!title) return;
+    
+    const descText = recipeDescInput ? recipeDescInput.value.trim() : '';
+    const description = descText ? descText.split('\n').map(p => p.trim()).filter(Boolean) : [];
+    
+    // Parse ingredients from rows
+    const ingredients = [];
+    if (recipeIngredientsRows) {
+        const rows = recipeIngredientsRows.querySelectorAll('.ingredient-row');
+        rows.forEach(row => {
+            const amountInput = row.querySelector('.ing-amount');
+            const nameInput = row.querySelector('.ing-name');
+            const amount = amountInput ? amountInput.value.trim() : '';
+            const name = nameInput ? nameInput.value.trim() : '';
+            if (name) {
+                ingredients.push({ amount, name });
+            }
+        });
+    }
+    
+    const instrText = recipeInstrInput ? recipeInstrInput.value.trim() : '';
+    const instructions = instrText ? instrText.split('\n').map(s => s.trim()).filter(Boolean) : [];
+    
+    // Generate a unique ID (starts with custom-)
+    const cleanId = 'custom-' + title.toLowerCase()
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '') + '-' + Date.now().toString(36);
+        
+    const newRecipe = {
+        id: cleanId,
+        title: title,
+        description: description,
+        ingredients: ingredients,
+        instructions: instructions
+    };
+    
+    // Prepend to active list of recipes
+    recipes.unshift(newRecipe);
+    
+    // Persist to localStorage
+    try {
+        const storedCustom = storage.getItem('recipes_custom');
+        const customRecipes = storedCustom ? JSON.parse(storedCustom) : [];
+        if (Array.isArray(customRecipes)) {
+            customRecipes.unshift(newRecipe);
+            storage.setItem('recipes_custom', JSON.stringify(customRecipes));
+        } else {
+            storage.setItem('recipes_custom', JSON.stringify([newRecipe]));
+        }
+    } catch(err) {
+        console.error("Failed to save custom recipe:", err);
+    }
+    
+    // Close modal, re-render list, and select new recipe
+    closeRecipeModal();
+    renderRecipeList(recipes);
+    selectRecipe(cleanId);
+    
+    // Smooth scroll the new recipe item into view
+    setTimeout(() => {
+        const newItem = recipeListContainer.querySelector(`.recipe-item[data-id="${cleanId}"]`);
+        if (newItem) {
+            newItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+    }, 120);
+}
+
+function deleteCustomRecipe(recipeId) {
+    if (!recipeId || !recipeId.startsWith('custom-')) return;
+    
+    const confirmDelete = confirm("Haluatko varmasti poistaa tämän reseptin pysyvästi?");
+    if (!confirmDelete) return;
+    
+    // Remove from active state list
+    recipes = recipes.filter(r => r.id !== recipeId);
+    
+    // Remove from localStorage
+    try {
+        const storedCustom = storage.getItem('recipes_custom');
+        if (storedCustom) {
+            let customRecipes = JSON.parse(storedCustom) || [];
+            if (Array.isArray(customRecipes)) {
+                customRecipes = customRecipes.filter(r => r.id !== recipeId);
+                storage.setItem('recipes_custom', JSON.stringify(customRecipes));
+            }
+        }
+    } catch(err) {
+        console.error("Failed to delete custom recipe:", err);
+    }
+    
+    // Clear selected state and reset views
+    activeRecipeId = null;
+    if (recipeDetailEl) recipeDetailEl.style.display = 'none';
+    if (emptyStateEl) emptyStateEl.style.display = 'flex';
+    document.querySelector('.app-container').classList.remove('recipe-active');
+    history.replaceState(null, null, ' ');
+    
+    // Render updated list
+    renderRecipeList(recipes);
 }
 
 function showSyncCodeModal() {
