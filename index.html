@@ -79,7 +79,10 @@
                         <!-- Ingredients Section -->
                         <section class="ingredients-section" aria-labelledby="ingredients-heading">
                             <h3 id="ingredients-heading">Ainekset</h3>
-                            <p class="section-tip">💡 Voit klikata ainesosia merkitäksesi ne hankituiksi/käytetyiksi.</p>
+                            <div class="ingredients-actions" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem; width: 100%;">
+                                <p class="section-tip" style="margin-bottom: 0; flex: 1; padding: 0.45rem 0.75rem;">💡 Rastita ainekset, jotka sinulla on jo. Lisää puuttuvat ostoslistalle.</p>
+                                <button id="add-all-ingredients-btn" class="share-btn join-btn" style="padding: 0.45rem 0.85rem; font-size: 0.8rem; font-weight: 600;" title="Lisää kaikki reseptin ainesosat ostoslistalle">🛒 Lisää kaikki</button>
+                            </div>
                             <ul class="ingredients-list" id="recipe-ingredients">
                                 <!-- Dynamic ingredients loaded here -->
                             </ul>

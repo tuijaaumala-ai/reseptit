@@ -50,6 +50,7 @@ const shoppingEmptyEl = document.getElementById('shopping-empty');
 // ==========================================
 const addRecipeBtn = document.getElementById('add-recipe-btn');
 const deleteRecipeBtn = document.getElementById('delete-recipe-btn');
+const addAllIngredientsBtn = document.getElementById('add-all-ingredients-btn');
 const recipeModalOverlay = document.getElementById('recipe-modal-overlay');
 const recipeModalClose = document.getElementById('recipe-modal-close');
 const recipeModalCancel = document.getElementById('recipe-modal-cancel');
@@ -339,26 +340,67 @@ function selectRecipe(recipeId) {
     recipeIngredientsEl.innerHTML = '';
     recipe.ingredients.forEach((ing, index) => {
         const li = document.createElement('li');
+        li.className = 'recipe-ingredient-item';
         const checkboxId = `ing-${recipeId}-${index}`;
         
         li.innerHTML = `
-            <label for="${checkboxId}">
+            <div class="ingredient-left">
                 <input type="checkbox" id="${checkboxId}">
-                ${ing.amount ? `<span class="amount">${escapeHTML(ing.amount)}</span>` : ''}
-                <span class="name">${escapeHTML(ing.name)}</span>
-            </label>
+                <label for="${checkboxId}">
+                    ${ing.amount ? `<span class="amount">${escapeHTML(ing.amount)}</span>` : ''}
+                    <span class="name">${escapeHTML(ing.name)}</span>
+                </label>
+            </div>
+            <button class="add-to-list-btn" title="Lisää ostoslistalle">🛒</button>
         `;
         
-        // Connect listener to automatically add clicked ingredients to the shopping list if checked!
-        const checkbox = li.querySelector('input');
-        checkbox.addEventListener('change', () => {
-            if (checkbox.checked) {
-                addShoppingItem(ing.name, ing.amount);
-            }
+        const addBtn = li.querySelector('.add-to-list-btn');
+        addBtn.addEventListener('click', () => {
+            addShoppingItem(ing.name, ing.amount);
+            addBtn.innerHTML = '✅';
+            addBtn.title = 'Lisätty ostoslistalle';
+            addBtn.classList.add('added');
+            
+            // Subtle scale dynamic micro-animation
+            addBtn.style.transform = 'scale(1.15)';
+            setTimeout(() => addBtn.style.transform = 'scale(1)', 150);
         });
 
         recipeIngredientsEl.appendChild(li);
     });
+
+    // Configure "Add all ingredients to shopping list" button click
+    if (addAllIngredientsBtn) {
+        addAllIngredientsBtn.innerHTML = '🛒 Lisää kaikki';
+        addAllIngredientsBtn.disabled = false;
+        addAllIngredientsBtn.style.opacity = '1';
+        
+        // Remove previous listeners by cloning
+        const newAddAllBtn = addAllIngredientsBtn.cloneNode(true);
+        addAllIngredientsBtn.parentNode.replaceChild(newAddAllBtn, addAllIngredientsBtn);
+        
+        newAddAllBtn.addEventListener('click', () => {
+            recipe.ingredients.forEach(ing => {
+                addShoppingItem(ing.name, ing.amount);
+            });
+            
+            // Set all individual ingredient buttons to "✅" state
+            const singleBtns = recipeIngredientsEl.querySelectorAll('.add-to-list-btn');
+            singleBtns.forEach(btn => {
+                btn.innerHTML = '✅';
+                btn.title = 'Lisätty ostoslistalle';
+                btn.classList.add('added');
+            });
+            
+            newAddAllBtn.innerHTML = '✅ Lisätty kaikki!';
+            newAddAllBtn.disabled = true;
+            newAddAllBtn.style.opacity = '0.7';
+            
+            // Subtle scale dynamic micro-animation
+            newAddAllBtn.style.transform = 'scale(1.05)';
+            setTimeout(() => newAddAllBtn.style.transform = 'scale(1)', 150);
+        });
+    }
 
     recipeInstructionsEl.innerHTML = '';
     if (recipe.instructions && recipe.instructions.length > 0) {
