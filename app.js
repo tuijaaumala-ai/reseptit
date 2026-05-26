@@ -355,16 +355,42 @@ function selectRecipe(recipeId) {
             <button class="add-to-list-btn" title="Lisää ostoslistalle">🛒</button>
         `;
         
+        const checkbox = li.querySelector('input[type="checkbox"]');
         const addBtn = li.querySelector('.add-to-list-btn');
+
+        checkbox.addEventListener('change', () => {
+            if (checkbox.checked) {
+                addBtn.disabled = true;
+                addBtn.style.opacity = '0.4';
+                addBtn.style.cursor = 'not-allowed';
+                addBtn.title = 'Ainesosa on jo kaapissa (merkitty valmiiksi)';
+            } else {
+                addBtn.disabled = false;
+                addBtn.style.opacity = '1';
+                addBtn.style.cursor = 'pointer';
+                addBtn.title = 'Lisää ostoslistalle';
+            }
+            updateAddAllBtnState();
+        });
+        
         addBtn.addEventListener('click', () => {
             addShoppingItem(ing.name, ing.amount);
             addBtn.innerHTML = '✅';
             addBtn.title = 'Lisätty ostoslistalle';
             addBtn.classList.add('added');
+            addBtn.disabled = true;
+            addBtn.style.opacity = '0.7';
+            addBtn.style.cursor = 'default';
+            
+            // Disable the checkbox since it's now on the shopping list
+            checkbox.disabled = true;
+            checkbox.checked = false;
             
             // Subtle scale dynamic micro-animation
             addBtn.style.transform = 'scale(1.15)';
             setTimeout(() => addBtn.style.transform = 'scale(1)', 150);
+            
+            updateAddAllBtnState();
         });
 
         recipeIngredientsEl.appendChild(li);
@@ -381,19 +407,34 @@ function selectRecipe(recipeId) {
         addAllIngredientsBtn.parentNode.replaceChild(newAddAllBtn, addAllIngredientsBtn);
         
         newAddAllBtn.addEventListener('click', () => {
-            recipe.ingredients.forEach(ing => {
-                addShoppingItem(ing.name, ing.amount);
+            let addedCount = 0;
+            recipe.ingredients.forEach((ing, idx) => {
+                const cb = document.getElementById(`ing-${recipeId}-${idx}`);
+                if (cb && !cb.checked && !cb.disabled) {
+                    addShoppingItem(ing.name, ing.amount);
+                    addedCount++;
+                    
+                    const liEl = cb.closest('.recipe-ingredient-item');
+                    const btn = liEl.querySelector('.add-to-list-btn');
+                    if (btn) {
+                        btn.innerHTML = '✅';
+                        btn.title = 'Lisätty ostoslistalle';
+                        btn.classList.add('added');
+                        btn.disabled = true;
+                        btn.style.opacity = '0.7';
+                        btn.style.cursor = 'default';
+                    }
+                    
+                    cb.disabled = true;
+                    cb.checked = false;
+                }
             });
             
-            // Set all individual ingredient buttons to "✅" state
-            const singleBtns = recipeIngredientsEl.querySelectorAll('.add-to-list-btn');
-            singleBtns.forEach(btn => {
-                btn.innerHTML = '✅';
-                btn.title = 'Lisätty ostoslistalle';
-                btn.classList.add('added');
-            });
-            
-            newAddAllBtn.innerHTML = '✅ Lisätty kaikki!';
+            if (addedCount > 0) {
+                newAddAllBtn.innerHTML = '✅ Lisätty tarvittavat!';
+            } else {
+                newAddAllBtn.innerHTML = 'Kaapissa jo kaikki!';
+            }
             newAddAllBtn.disabled = true;
             newAddAllBtn.style.opacity = '0.7';
             
@@ -429,6 +470,96 @@ function selectRecipe(recipeId) {
 
     history.replaceState(null, null, `#${recipeId}`);
     document.querySelector('.app-container').classList.add('recipe-active');
+    
+    // Initialize checkboxes and add-to-list buttons based on current shoppingList
+    updateRecipeIngredientsSyncStates();
+}
+
+function updateRecipeIngredientsSyncStates() {
+    if (!activeRecipeId) return;
+    const recipe = recipes.find(r => r.id === activeRecipeId);
+    if (!recipe) return;
+    
+    recipe.ingredients.forEach((ing, index) => {
+        const checkboxId = `ing-${activeRecipeId}-${index}`;
+        const cb = document.getElementById(checkboxId);
+        if (!cb) return;
+        
+        const isOnShoppingList = shoppingList.some(item => 
+            item.name.toLowerCase() === ing.name.toLowerCase() && !item.bought
+        );
+        
+        const li = cb.closest('.recipe-ingredient-item');
+        const addBtn = li.querySelector('.add-to-list-btn');
+        
+        if (isOnShoppingList) {
+            // Disable checkbox and make sure it is unchecked
+            cb.disabled = true;
+            cb.checked = false;
+            
+            // Disable and set addBtn to "added" state
+            if (addBtn) {
+                addBtn.innerHTML = '✅';
+                addBtn.title = 'Lisätty ostoslistalle';
+                addBtn.classList.add('added');
+                addBtn.disabled = true;
+                addBtn.style.opacity = '0.7';
+                addBtn.style.cursor = 'default';
+            }
+        } else {
+            // Enable checkbox
+            cb.disabled = false;
+            
+            if (addBtn) {
+                if (cb.checked) {
+                    // If checked (in pantry), disable addBtn
+                    addBtn.innerHTML = '🛒';
+                    addBtn.title = 'Ainesosa on jo kaapissa (merkitty valmiiksi)';
+                    addBtn.classList.remove('added');
+                    addBtn.disabled = true;
+                    addBtn.style.opacity = '0.4';
+                    addBtn.style.cursor = 'not-allowed';
+                } else {
+                    // If unchecked, enable addBtn
+                    addBtn.innerHTML = '🛒';
+                    addBtn.title = 'Lisää ostoslistalle';
+                    addBtn.classList.remove('added');
+                    addBtn.disabled = false;
+                    addBtn.style.opacity = '1';
+                    addBtn.style.cursor = 'pointer';
+                }
+            }
+        }
+    });
+    
+    updateAddAllBtnState();
+}
+
+function updateAddAllBtnState() {
+    if (!activeRecipeId) return;
+    const recipe = recipes.find(r => r.id === activeRecipeId);
+    if (!recipe) return;
+    
+    const addAllBtn = document.getElementById('add-all-ingredients-btn');
+    if (!addAllBtn) return;
+    
+    // Count ingredients that are NOT in pantry and NOT already on the shopping list
+    const pendingIngredients = recipe.ingredients.filter((ing, idx) => {
+        const cb = document.getElementById(`ing-${activeRecipeId}-${idx}`);
+        const isChecked = cb ? cb.checked : false;
+        const isOnList = shoppingList.some(item => item.name.toLowerCase() === ing.name.toLowerCase() && !item.bought);
+        return !isChecked && !isOnList;
+    });
+    
+    if (pendingIngredients.length === 0) {
+        addAllBtn.disabled = true;
+        addAllBtn.style.opacity = '0.5';
+        addAllBtn.innerHTML = 'Kaapissa jo kaikki!';
+    } else {
+        addAllBtn.disabled = false;
+        addAllBtn.style.opacity = '1';
+        addAllBtn.innerHTML = '🛒 Lisää kaikki';
+    }
 }
 
 function setupRecipeEventListeners() {
@@ -670,6 +801,11 @@ function renderShoppingList() {
 
         shoppingListItemsContainer.appendChild(li);
     });
+
+    // Keep recipe detail view checkboxes and buttons fully synchronized reactively
+    if (typeof updateRecipeIngredientsSyncStates === 'function') {
+        updateRecipeIngredientsSyncStates();
+    }
 }
 
 // Shopping list operations

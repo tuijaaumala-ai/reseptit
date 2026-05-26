@@ -1643,7 +1643,7 @@ body.widget-mode .exit-widget-btn:active {
     line-height: 1;
 }
 
-.recipe-ingredient-item .add-to-list-btn:hover {
+.recipe-ingredient-item .add-to-list-btn:not(:disabled):hover {
     border-color: var(--primary);
     color: var(--primary);
     background-color: var(--primary-light);
@@ -1653,4 +1653,20 @@ body.widget-mode .exit-widget-btn:active {
     border-color: #10b981;
     color: #10b981;
     background-color: rgba(16, 185, 129, 0.08);
+}
+
+/* Premium styling for disabled recipe checkboxes & buttons */
+.recipe-ingredient-item input[type="checkbox"]:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background-color: var(--border-color);
+    border-color: var(--border-color);
+}
+
+.recipe-ingredient-item .add-to-list-btn:disabled {
+    cursor: not-allowed;
+}
+
+.recipe-ingredient-item .add-to-list-btn.added:disabled {
+    cursor: default;
 }
