@@ -36,8 +36,8 @@ Built using standard web technologies (HTML5, Vanilla CSS3, and ES6 JavaScript),
 ### 1. Recipe Browser & Search
 * **Interactive Catalog:** Fast, client-side fuzzy searching by recipe titles, descriptions, or specific ingredients.
 * **Premium Typographic Layout:** Curated layout utilizing Google Fonts (*Outfit* & *Playfair Display*), harmonized HSL color palettes, elegant glassmorphism accents, and automatic Dark/Light mode adaptation.
-* **Cooking Checklist (Pantry Mode):** Interactive checkboxes next to each recipe ingredient. Ticking off an item marks it as "prepared" or "available in pantry" (crossing it out visually in the recipe view) **without** adding or cluttering your shopping list.
-* **Granular "Add to List" Operations:** Add individual ingredients to your shopping list with a single click of the `🛒` icon, or add *all* ingredients at once using the prominent `🛒 Lisää kaikki` (Add All) action.
+* **Cooking Checklist (Pantry Mode) with Mutual Exclusion:** Interactive checkboxes next to each recipe ingredient. Ticking off an item marks it as "prepared" or "available in pantry" (crossing it out visually in the recipe view) and dynamically disables its `🛒` button. Conversely, if an item is already on the shopping list, its checkbox is locked and disabled to prevent check-off conflicts.
+* **Granular "Add to List" Operations:** Add individual ingredients to your shopping list with a single click of the `🛒` icon (which then locks the checkbox and turns the icon to `✅`). Alternatively, add *only* missing/unprepared ingredients at once using the prominent `🛒 Lisää kaikki` (Add All) action, which intelligently skips items you already marked as available in your pantry.
 
 ### 2. Custom Recipe Creator
 * **In-App Creation Modal:** Easily add your own custom recipes with titles, descriptions, dynamic ingredient builders (quantity + name rows), and step-by-step instructions.
